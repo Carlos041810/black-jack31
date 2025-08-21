@@ -1,0 +1,467 @@
+    /* =========================
+           RESET Y CONFIGURACIÓN BASE
+           ========================= */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #1a4b4b, #2d5a5a, #1a4b4b);
+            color: white;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* =========================
+           HEADER Y NAVEGACIÓN
+           ========================= */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+            padding: 6px 20px;
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .left-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .exit-btn {
+            background: #84828200;
+            color: rgb(230, 54, 54);
+            border: 2px solid rgb(94, 93, 93);
+            padding: 3px 16px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .invite-section {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            border: 1.5px solid rgba(94, 93, 93, 0.5);
+            padding: 1px 0 1px 19px;
+            border-radius: 10px;
+            background: rgba(132, 130, 130, 0.1);
+        }
+
+        .invite-section button {
+            background: transparent;
+            color: rgb(230, 54, 54);
+            border: 2px solid rgb(230, 54, 54);
+            padding: 3px 14px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .invite-section button:hover {
+            background-color: rgb(230, 54, 54);
+            color: white;
+        }
+
+        .dealer-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .how-to-play {
+            background: none;
+            color: white;
+            border: 1px solid white;
+            padding: 2px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* =========================
+           SIDEBAR
+           ========================= */
+                .sidebar {
+            margin: 20px;
+            position: fixed;
+            left: 0;
+
+            gap: 8px;
+            color: #27ae60;
+            font-weight: bold;
+            font-size: 14px;
+            padding: 10px;
+            background-color: rgba(39, 174, 96, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid #27ae60;
+
+
+        }
+
+
+        /* =========================
+           ÁREA DE JUEGO PRINCIPAL
+           ========================= */
+        .game-area {
+            height: calc(100vh - 50px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        /* =========================
+           ÁREA DE JUGADORES (AHORA ARRIBA)
+           ========================= */
+        .player-area {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            order: 1;
+            /* Se muestra primero */
+        }
+
+        .player-cards {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 400px;
+            margin-top: -50px;
+            /* Menos negativo para alejar más del header */
+            min-height: 120px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .player-position {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .player-bet {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+           
+            padding: 8px 12px;
+            border-radius: 8px;
+            
+        }
+
+        .player-chip {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            border: 2px solid white;
+            font-size: 10px;
+        }
+
+        .bet-amount {
+            color: #D4AF37;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        /* =========================
+           SVG Y TEXTO DECORATIVO (EN EL CENTRO)
+           ========================= */
+        .svg-container {
+            order: 2;
+            /* En el medio */
+            margin: 20px 0;
+        }
+
+        text {
+            filter: url(#shadow);
+        }
+
+        /* =========================
+           ÁREA DEL DEALER (AHORA ABAJO)
+           ========================= */
+        .dealer-area {
+            text-align: center;
+            order: 3;
+            /* Se muestra al final */
+        }
+
+        .dealer-cards {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            margin-top: -60px;
+            /* Más espacio arriba */
+            min-height: 120px;
+            margin-bottom: 20px;
+        }
+
+        /* =========================
+           EFECTOS DE CURVA PARA CARTAS (INVERTIDOS)
+           ========================= */
+        .curve-left {
+            transform: translateY(50px) rotate(-25deg);
+            /* Invertido */
+        }
+
+        .curve-center {
+            transform: translateY(0px) rotate(0deg);
+        }
+
+        .curve-right {
+            transform: translateY(50px) rotate(25deg);
+            /* Invertido */
+        }
+
+        /* =========================
+           CARTAS Y SLOTS
+           ========================= */
+        .card-slot {
+            width: 80px;
+            height: 110px;
+            border: 2px dashed #D4AF37;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(212, 175, 55, 0.1);
+            color: #D4AF37;
+            font-size: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .card-slot:hover {
+            background: rgba(212, 175, 55, 0.2);
+            border-color: #FFD700;
+        }
+
+        .card {
+            width: 80px;
+            height: 110px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            position: relative;
+            color: black;
+            font-weight: bold;
+        }
+
+        .card-back {
+            background: linear-gradient(45deg, #1a472a, #2d5a3d);
+            background-image: repeating-linear-gradient(45deg,
+                    transparent,
+                    transparent 10px,
+                    rgba(255, 255, 255, 0.1) 10px,
+                    rgba(255, 255, 255, 0.1) 20px);
+            color: transparent;
+        }
+
+        .card-red {
+            color: #d32f2f;
+        }
+
+        .card-black {
+            color: #000;
+        }
+
+        .card-value {
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .card-suit {
+            font-size: 24px;
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .card-value-bottom {
+            font-size: 16px;
+            transform: rotate(180deg);
+            align-self: flex-end;
+        }
+
+        /* =========================
+           ÁREA DE APUESTAS (ABAJO CON EL DEALER)
+           ========================= */
+        .betting-area {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: rgba(0, 0, 0, 0);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .balance-info {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* =========================
+           FICHAS
+           ========================= */
+        .chips {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chip {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            border: 3px solid white;
+            transition: transform 0.2s;
+        }
+
+        .chip:hover {
+            transform: scale(1.1);
+        }
+
+        /* Colores específicos de las fichas */
+        .chip-10 {
+            background: white;
+            color: black;
+        }
+
+        .chip-25 {
+            background: #f44336;
+            color: white;
+        }
+
+        .chip-50 {
+            background: #2196f3;
+            color: white;
+        }
+
+        .chip-100 {
+            background: #4caf50;
+            color: white;
+        }
+
+        .chip-500 {
+            background: #9c27b0;
+            color: white;
+        }
+
+        .chip-1000 {
+            background: #ff9800;
+            color: white;
+        }
+
+        .chip-5000 {
+            background: #795548;
+            color: white;
+        }
+
+        .chip-10000 {
+            background: #607d8b;
+            color: white;
+        }
+
+        /* =========================
+           BOTÓN SALIR DE MESA
+           ========================= */
+        .leave-table {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            color: white;
+            border: 1px solid white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        /* Hamburguesa oculta en escritorio */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    font-size: 22px;
+    color: white;
+    cursor: pointer;
+}
+
+/* Menú móvil */
+.mobile-menu {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background: rgba(0,0,0,0.9);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 100;
+}
+
+/* Desktop: se muestra todo normal */
+.desktop-only {
+    display: inline-block;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .invite-section,
+    .desktop-only {
+        display: none; /* ocultamos estos en móvil */
+    }
+
+    .menu-toggle {
+        display: block; /* mostramos hamburguesa */
+    }
+}
+@media (max-width: 1220px) {
+    .player-cards {
+        gap: 150px; /* menos separación */
+        margin-top: -20px; /* más cerca del header */
+    }
+}
+@media (max-width: 720px) {
+    .player-cards {
+        gap: 70px;   /* menos separación entre jugadores */
+        margin-top: -20px;
+    }
+}
+@media (max-width: 568px) {
+    .player-cards {
+        gap: 30px;   /* menos separación entre jugadores */
+        margin-top: -20px;
+    }
+}

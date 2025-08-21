@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Royal Blackjack Casino</title>
+    <link rel="stylesheet" href="/css/inicio.css">
+</head>
+
+<body>
+    <!--* Cartas flotantes *-->
+    <div class="floating-cards card-1">♠</div>
+    <div class="floating-cards card-2">♥</div>
+    <div class="floating-cards card-3">♣</div>
+    <div class="floating-cards card-4">♦</div>
+    <div class="login-container">
+        <div class="logo">
+            <div class="subtitle">Premium Casino Experience</div>
+        </div>
+        <div class="welcome-message">
+            Bienvenido al casino más exclusivo<br>
+            <strong>¿Cómo deseas ingresar?</strong>
+        </div>
+        <div class="options-container">
+            <div class="option-card dealer-card">
+                <div class="option-icon">🎩</div>
+                <div class="option-title">INGRESAR COMO DEALER</div>
+                <div class="option-description">
+                    Controla las mesas, administra los juegos y gestiona la experiencia de los jugadores
+                </div>
+                <button class="option-button" id="dealerBtn" onclick="enterAsDealer()">ACCEDER COMO DEALER</button>
+            </div>
+            <div class="option-card player-card" onclick="showCodeModal()">
+                <div class="option-icon">🃏</div>
+                <div class="option-title">INGRESAR COMO JUGADOR</div>
+                <div class="option-description">
+                    Únete a una mesa existente ingresando el código de la sala
+                </div>
+                <button class="option-button">UNIRSE A MESA</button>
+            </div>
+        </div>
+        <div class="footer-text">
+            ♠ ♥ Juega con responsabilidad ♣ ♦
+        </div>
+    </div>
+
+    <!--* Modal para código de mesa *-->
+    <div class="modal" id="codeModal">
+        <div class="modal-content">
+            <h3>🃏 Unirse a Mesa</h3>
+            <p style="color: #ccc; margin-bottom: 20px;">Ingresa el código de 6 dígitos de la mesa</p>
+            <input type="text" class="code-input" id="roomCode" placeholder="000000" maxlength="6">
+            <div class="modal-buttons">
+                <button class="modal-btn join-btn" id="joinBtn" onclick="joinRoom()">UNIRSE</button>
+                <button class="modal-btn cancel-btn" onclick="closeModal()">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!--* Modal de loading *-->
+    <div class="modal" id="loadingModal">
+        <div class="modal-content">
+            <h3>🎰 Creando Mesa</h3>
+            <p style="color: #ccc; margin-bottom: 20px;">Preparando tu mesa de blackjack...</p>
+            <div class="loading-spinner">⚡</div>
+        </div>
+    </div>
+
+    <script>
+
+        async function enterAsDealer() {
+            const dealerBtn = document.getElementById('dealerBtn');
+            const loadingModal = document.getElementById('loadingModal');
+
+            try {
+                loadingModal.style.display = 'flex';
+                dealerBtn.disabled = true;
+                dealerBtn.textContent = 'CREANDO MESA...';
+
+                const response = await fetch('/crear-mesa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ dealer: 'Dealer Principal' })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('Mesa creada con código:', data.codigo);
+                    window.location.href = `/dealer?codigo=${data.codigo}`;
+
+                    // Emitir evento con el código
+                    const event = new CustomEvent('mesaCreada', { detail: data.codigo });
+                    window.dispatchEvent(event);
+                } else {
+                    throw new Error(data.error || 'Error desconocido al crear la mesa');
+                }
+            } catch (error) {
+                console.error('Error al crear la mesa:', error);
+                alert('Error al crear la mesa: ' + error.message);
+
+                loadingModal.style.display = 'none';
+                dealerBtn.disabled = false;
+                dealerBtn.textContent = 'ACCEDER COMO DEALER';
+            }
+        }
+
+        async function joinRoom() {
+            const roomCode = document.getElementById('roomCode').value;
+            const joinBtn = document.getElementById('joinBtn');
+
+            if (!roomCode || roomCode.length !== 6) {
+                alert('Por favor ingresa un código válido de 6 dígitos');
+                return;
+            }
+            try {
+                joinBtn.disabled = true;
+                joinBtn.textContent = 'CONECTANDO...';
+
+                const response = await fetch('/verificar-mesa', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ codigo: roomCode })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    console.log('Mesa verificada exitosamente:', data);
+                    window.location.href = `/player?codigo=${roomCode}`;
+                } else {
+                    throw new Error(data.error || 'No se pudo unir a la mesa.');
+                }
+            } catch (error) {
+                console.error('Error al verificar la mesa:', error);
+                alert('Error: ' + error.message);
+
+                joinBtn.disabled = false;
+                joinBtn.textContent = 'UNIRSE';
+            }
+        }
+
+        function showCodeModal() {
+            document.getElementById("codeModal").style.display = "flex";
+        }
+
+        function closeModal() {
+            document.getElementById("codeModal").style.display = "none";
+        }
+
+    </script>
+
+    <style>
+        .modal {
+            display: none; /* Oculto por defecto, se activa con JS */
+            position: fixed; /* Se queda fijo en la pantalla */
+            z-index: 1000; /* Se asegura que esté por encima de todo */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
+            
+            /* Centrado con Flexbox */
+            justify-content: center;
+            align-items: center;
+        }
+        .loading-spinner {
+            font-size: 2em;
+            text-align: center;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        .option-button:disabled {
+            background: #444;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+    </style>
+</body>
+
+</html>
