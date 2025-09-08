@@ -12,7 +12,7 @@
     <!-- HEADER -->
     <header class="top-bar">
         <div class="left-group">
-            <button class="exit-btn">
+            <button class="exit-btn" onclick="exitRoom()">
                 <i class="fas fa-door-open"></i> EXIT ROOM
             </button>
         </div>
@@ -27,7 +27,7 @@
         <!-- Menú Oculto (en móviles) -->
         <nav class="mobile-menu" id="mobileMenu">
             <button class="how-to-play">🔊 HOW TO PLAY</button>
-            <button class="exit-btn" onclick="window.location.href='../Login/index.html'">EXIT</button>
+            <button class="exit-btn" onclick="exitRoom()">EXIT</button>
             <button>COPY INVITE</button>
         </nav>
 
@@ -109,7 +109,7 @@
     <div class="betting-area" id="bettingArea" style="display: none;">
         <div class="balance-info">
             <div>Balance</div>
-            <div id="balance">$1000</div>
+            <div id="balance">$100</div>
         </div>
         <div>Total Bet<br><span id="totalBet">$0</span></div>
         <div class="chips">
@@ -132,14 +132,14 @@
     </div>
 
     <!-- BOTÓN SALIR -->
-    <button class="leave-table">🚪 LEAVE TABLE</button>
+    <button class="leave-table" onclick="exitRoom()">🚪 LEAVE TABLE</button>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/sidebar.js"></script>
     <script>
         // Variables globales
         window.socket = io();
-        let currentBalance = 1000; // Sincronizado con el servidor
+        let currentBalance = 100; // Valor inicial, se sincronizará con el servidor
         let currentBet = 0;
         let betConfirmed = false;
         let gameState = 'waiting';
@@ -184,7 +184,8 @@
                 // Actualizar nuestro balance si existe en la lista
                 const currentPlayer = players.find(p => p.name === currentPlayerName);
                 if (currentPlayer) {
-                    currentBalance = currentPlayer.balance || 1000;
+                    // El balance puede ser 0, lo cual es un valor válido. No usar '||' para fallback.
+                    currentBalance = (currentPlayer.balance !== null && currentPlayer.balance !== undefined) ? currentPlayer.balance : 100;
                     currentBet = currentPlayer.bet || 0;
                     betConfirmed = currentPlayer.betConfirmed || false;
                     updateBetDisplay();
@@ -260,10 +261,16 @@
             window.socket.on('gameReset', () => {
                 console.log('🔄 Juego reiniciado.');
                 showNotification('El juego ha sido reiniciado.');
+                // Limpiar la mano del dealer
+                document.getElementById('dealerCards').innerHTML = '';
                 // Limpiar el mensaje de turno. El resto de la UI se limpia con 'updatePlayerList'
-                const turnDisplay = document.getElementById('turnDisplay');
-                // Ocultar botones de acción
                 document.getElementById('playerActions').style.display = 'none';
+                const turnDisplay = document.getElementById('turnDisplay');
+                // Limpiar overlays de resultados
+                document.querySelectorAll('.result-overlay').forEach(o => o.remove());
+                document.querySelectorAll('.busted').forEach(b => b.classList.remove('busted'));
+                const dealerScore = document.querySelector('.dealer-score-display');
+                if (dealerScore) dealerScore.remove();
                 if (turnDisplay) turnDisplay.remove();
             });
 
@@ -287,10 +294,10 @@
                 document.getElementById('playerActions').style.display = 'none';
                 animateDealing(data.players, data.dealer);
             });
-
+            
             // Un jugador (o yo) recibe una nueva carta
             window.socket.on('playerCardUpdate', (data) => {
-                console.log(`[CARD UPDATE] Jugador ${data.playerId} recibe una carta ${data.newCard.card}.`);
+                console.log(`[CARD UPDATE] Jugador ${data.playerId} recibe una carta.`);
                 
                 const deckElement = document.querySelector('.deck-pile');
                 if (!deckElement) return;
@@ -299,9 +306,9 @@
                 const dealInfo = {
                     target: 'player',
                     id: data.playerId,
-                    card: data.newCard
+                    card: data.newCard,
                 };
-
+                // Animar solo la nueva carta que se reparte
                 dealOneCard(dealInfo, deckRect);
             });
 
@@ -313,6 +320,10 @@
                 if (playerDiv) {
                     playerDiv.classList.add('busted');
                 }
+                // Si soy yo quien se ha pasado, oculto mis botones de acción.
+                if (data.playerId === window.socket.id) {
+                    document.getElementById('playerActions').style.display = 'none';
+                }
             });
 
             // El turno pasa al dealer
@@ -323,6 +334,75 @@
                 // El null en playerId se encarga de que no se resalte a nadie
                 // y el mensaje se actualice correctamente.
                 highlightCurrentPlayerUI(null, 'Dealer');
+            });
+
+            // El dealer revela su carta
+            window.socket.on('revealDealerCard', (data) => {
+                console.log('[DEALER REVEAL] El dealer revela su mano:', data.dealerHand);
+                const dealerHandContainer = document.getElementById('dealerCards');
+                const hiddenCard = dealerHandContainer.querySelector('.card-back');
+                
+                if (hiddenCard && data.dealerHand.length > 1) {
+                    const revealedCardData = data.dealerHand[1];
+                    const revealedCardElement = createCardElement(revealedCardData);
+                    revealedCardElement.style.position = 'absolute'; // Mantener posicionamiento para el abanico
+
+                    // Reemplazo simple
+                    hiddenCard.replaceWith(revealedCardElement);
+                    
+                    applyFanEffect(); // Re-aplicar el efecto abanico
+                }
+            });
+
+            // Resultados del juego
+            window.socket.on('gameResults', (data) => {
+                console.log('[RESULTS] Resultados recibidos:', data);
+                showNotification('Ronda finalizada. Mostrando resultados...', 'success');
+                addResultStyles(); // Asegurarse de que los estilos existan
+
+                // Ocultar el mensaje de turno y los botones de acción
+                const turnDisplay = document.getElementById('turnDisplay');
+                if (turnDisplay) turnDisplay.style.display = 'none';
+                document.getElementById('playerActions').style.display = 'none';
+
+                data.results.forEach(result => {
+                    const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
+                    if (playerDiv) {
+                        // Crear un div para el resultado
+                        const resultOverlay = document.createElement('div');
+                        resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
+                        
+                        resultOverlay.innerHTML = `
+                            <div class="outcome-text">${result.outcome}</div>
+                            <div class="score-text">Puntos: ${result.playerScore}</div>
+                        `;
+                        
+                        playerDiv.appendChild(resultOverlay);
+
+                        // Actualizar nuestro propio balance
+                        if (result.playerId === window.socket.id) {
+                            currentBalance = result.newBalance;
+                            updateBetDisplay();
+                        }
+                    }
+                });
+
+                // Mostrar la puntuación final del dealer
+                const dealerHandContainer = document.getElementById('dealerCards');
+                // Remover score display anterior si existe
+                const oldScoreDisplay = dealerHandContainer.querySelector('.dealer-score-display');
+                if (oldScoreDisplay) oldScoreDisplay.remove();
+
+                const dealerScoreDisplay = document.createElement('div');
+                dealerScoreDisplay.className = 'dealer-score-display';
+                let dealerText = `Puntuación del Dealer: ${data.dealerScore}`;
+                if (data.dealerScore > 21) {
+                    dealerText += ' (BUST)';
+                } else if (data.dealerScore === 21 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
+                    dealerText += ' (BLACKJACK)';
+                }
+                dealerScoreDisplay.textContent = dealerText;
+                dealerHandContainer.appendChild(dealerScoreDisplay);
             });
         });
 
@@ -626,6 +706,57 @@
             }
         }
 
+        function addResultStyles() {
+            if (document.getElementById('game-result-styles')) return;
+            const style = document.createElement('style');
+            style.id = 'game-result-styles';
+            style.innerHTML = `
+                .result-overlay {
+                    position: absolute;
+                    top: 0; left: 0; right: 0; bottom: 0;
+                    background: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    border-radius: 10px;
+                    z-index: 15;
+                    text-align: center;
+                    animation: fadeIn 0.5s;
+                }
+                @keyframes fadeIn {
+                    from { opacity: 0; }
+                    to { opacity: 1; }
+                }
+                .result-overlay .outcome-text {
+                    font-size: 2.5em;
+                    font-weight: bold;
+                    text-transform: uppercase;
+                    text-shadow: 2px 2px 5px #000;
+                }
+                .result-overlay .score-text {
+                    font-size: 1.2em;
+                    margin-top: 5px;
+                }
+                .result-overlay.result-win, .result-overlay.result-blackjack { background: rgba(39, 174, 96, 0.7); }
+                .result-overlay.result-lose { background: rgba(192, 57, 43, 0.7); }
+                .result-overlay.result-push { background: rgba(44, 62, 80, 0.7); }
+                .dealer-score-display {
+                    position: absolute;
+                    bottom: -30px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.7);
+                    color: #FFD700;
+                    padding: 5px 15px;
+                    border-radius: 10px;
+                    font-weight: bold;
+                    white-space: nowrap;
+                }`;
+            document.head.appendChild(style);
+        }
+
         function highlightCurrentPlayerUI(playerId, playerName) {
             // Remover highlights previos
             document.querySelectorAll('.player-position').forEach(div => {
@@ -880,6 +1011,29 @@
         function showBettingTimer(duration) {
             // Opcional: implementar countdown visual
             console.log(`Tiempo restante para apostar: ${duration/1000} segundos`);
+        }
+
+        async function exitRoom() {
+            if (confirm('¿Seguro que quieres salir de la mesa?')) {
+                try {
+                    showNotification('Saliendo de la mesa...', 'info');
+                    
+                    // Notificar al servidor que el jugador está saliendo.
+                    // El servidor se encargará de actualizar el conteo y el estado de la mesa.
+                    await fetch('/salir-mesa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ codigo: roomCode })
+                    });
+
+                } catch (error) {
+                    console.error('Error al notificar al servidor sobre la salida:', error);
+                } finally {
+                    // Redirigir a la página de inicio, independientemente de si la llamada a la API tuvo éxito.
+                    // La desconexión del socket también limpiará al jugador en el servidor como respaldo.
+                    window.location.href = '/';
+                }
+            }
         }
 
         // Inicializar

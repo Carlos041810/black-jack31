@@ -24,13 +24,9 @@ function calculateHandValue(hand) {
     for (const card of hand) {
         if (card.hidden) continue; // No contar cartas ocultas
 
-        if (card.card === 'A') {
+        sum += card.points; // Usamos la propiedad 'points' que ya tiene el valor numérico
+        if (card.value === 'A') { // Contamos los Ases para poder ajustar su valor de 11 a 1 si es necesario
             aces++;
-            sum += 11;
-        } else if (['K', 'Q', 'J'].includes(card.card)) {
-            sum += 10;
-        } else {
-            sum += parseInt(card.card, 10);
         }
     }
     while (sum > 21 && aces > 0) {
@@ -52,8 +48,86 @@ function advanceTurn(roomCode, io) {
         const nextPlayer = playersWithBets[room.currentPlayerTurnIndex];
         io.to(roomCode).emit('turnUpdate', { playerId: nextPlayer.id, playerName: nextPlayer.name });
     } else {
-        io.to(roomCode).emit('dealerTurn');
+        // Es el turno del dealer
+        io.to(roomCode).emit('dealerTurn'); // Notifica a los clientes que el turno del dealer comienza
+        playDealerTurn(roomCode, io); // Inicia la lógica del dealer en el servidor
     }
+}
+
+// Lógica para el turno del dealer
+function playDealerTurn(roomCode, io) {
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    console.log(`[DEALER TURN] Iniciando turno del dealer para la sala ${roomCode}`);
+    // La lógica ahora es pasiva. El servidor espera a que el dealer
+    // presione el botón para revelar su carta. El evento 'dealerTurn'
+    // ya ha notificado a los clientes.
+}
+
+// Lógica para determinar los ganadores
+function determineWinners(roomCode, io) {
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    const dealerScore = calculateHandValue(room.dealerHand);
+    const dealerBusted = dealerScore > 21; // Poco probable con 2 cartas, pero se incluye por robustez.
+    const isDealerBlackjack = dealerScore === 21 && room.dealerHand.length === 2;
+
+    console.log(`[RESULTS] Comparando puntuaciones. Dealer tiene: ${dealerScore}`);
+
+    const results = [];
+
+    room.players.forEach(player => {
+        // Solo procesar jugadores que confirmaron su apuesta
+        if (!player.betConfirmed || player.bet === 0) {
+            return;
+        }
+
+        const playerScore = calculateHandValue(player.hand);
+        const playerBusted = playerScore > 21;
+        const isPlayerBlackjack = playerScore === 21 && player.hand.length === 2;
+
+        let outcome = '';
+        let winnings = 0;
+
+        if (playerBusted) {
+            outcome = 'LOSE';
+            winnings = 0; // La apuesta ya se descontó
+        } else if (isDealerBlackjack) {
+            outcome = isPlayerBlackjack ? 'PUSH' : 'LOSE';
+            winnings = isPlayerBlackjack ? player.bet : 0;
+        } else if (isPlayerBlackjack) {
+            outcome = 'BLACKJACK';
+            winnings = player.bet * 2.5; // Gana 1.5x la apuesta, total devuelto 2.5x
+        } else if (dealerBusted) {
+            outcome = 'WIN';
+            winnings = player.bet * 2;
+        } else if (playerScore > dealerScore) {
+            outcome = 'WIN';
+            winnings = player.bet * 2; // Gana 1x la apuesta, total devuelto 2x
+        } else if (playerScore < dealerScore) {
+            outcome = 'LOSE';
+            winnings = 0;
+        } else { // Empate
+            outcome = 'PUSH';
+            winnings = player.bet; // Se devuelve la apuesta
+        }
+
+        player.balance += winnings; // Se actualiza el saldo del jugador
+
+        results.push({
+            playerId: player.id,
+            playerName: player.name,
+            outcome: outcome,
+            playerScore: playerScore,
+            newBalance: player.balance
+        });
+    });
+
+    room.gameState = GAME_STATES.FINISHED;
+    io.to(roomCode).emit('gameResults', { results, dealerScore });
+    io.to(roomCode).emit('gameStateUpdate', { state: GAME_STATES.FINISHED });
 }
 
 module.exports = (io, db) => {
@@ -366,7 +440,7 @@ module.exports = (io, db) => {
             currentPlayer.hand.push(newCard);
 
             const handValue = calculateHandValue(currentPlayer.hand);
-            console.log(`[HIT] Jugador ${currentPlayer.name} pide carta. Nueva carta: ${newCard.card}${newCard.suit}. Puntuación: ${handValue}`);
+            console.log(`[HIT] Jugador ${currentPlayer.name} pide carta. Nueva carta: ${newCard.value}${newCard.suit}. Puntuación: ${handValue}`);
 
             // Notificar a todos sobre la nueva carta
             io.to(roomCode).emit('playerCardUpdate', {
@@ -402,6 +476,24 @@ module.exports = (io, db) => {
 
             console.log(`[STAND] Jugador ${currentPlayer.name} se planta.`);
             advanceTurn(roomCode, io);
+        });
+
+        // Evento para que el dealer revele su carta
+        socket.on('dealerRevealCard', () => {
+            const roomCode = socket.roomCode;
+            const room = rooms[roomCode];
+            if (!room) return;
+
+            // Idealmente, verificar que el emisor es el dealer.
+            // En este diseño, solo la vista del dealer tiene el botón, así que es implícito.
+
+            console.log(`[DEALER ACTION] El dealer revela su carta en la sala ${roomCode}`);
+
+            // Emitir a todos los clientes para que actualicen la vista
+            io.to(roomCode).emit('revealDealerCard', { dealerHand: room.dealerHand });
+
+            // Una vez revelada la carta, determinar los ganadores tras un breve instante
+            setTimeout(() => determineWinners(roomCode, io), 1500); // Delay para que se vea la carta
         });
 
         // Evento para reiniciar el juego a la fase de apuestas (solo dealer)
