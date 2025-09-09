@@ -831,6 +831,12 @@
             cardDiv.className = 'card';
             cardDiv.style.backgroundImage = `url('/${card.src}')`;
             // Opcional: puedes dejar el texto superpuesto si tu CSS lo permite
+
+    // Estilos para asegurar que la imagen se vea bien
+    cardDiv.style.backgroundSize = 'cover'; // Escala la imagen para cubrir el div
+    cardDiv.style.backgroundPosition = 'center'; // Centra la imagen
+    cardDiv.style.backgroundRepeat = 'no-repeat'; // Evita que la imagen se repita
+
             return cardDiv;
         }
 

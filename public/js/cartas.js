@@ -36,6 +36,22 @@ function createDeck() {
             });
         }
     }
+
+    // Cartas negativas que se añadirán 2 veces cada una
+    const negativeCardsInfo = [
+        { value: '-3', points: -3, src: 'img/negative-3.png' },
+        { value: '-4', points: -4, src: 'img/negative-4.png' },
+        { value: '-5', points: -5, src: 'img/negative-5.png' },
+        { value: '-6', points: -6, src: 'img/negative-6.png' }
+    ];
+
+    for (const cardInfo of negativeCardsInfo) {
+        // Añadir cada carta negativa dos veces
+        for (let i = 0; i < 2; i++) {
+            deck.push({ suit: '☠️', ...cardInfo }); // Usamos un palo especial para estas cartas
+        }
+    }
+
     return deck;
 }
 
