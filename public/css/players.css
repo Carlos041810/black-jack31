@@ -529,8 +529,15 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
+        margin-top: -30px;
     }
 
+    .sidebar {
+        margin: 0;
+        top: 60px; /* Posición justo debajo de la barra superior */
+        left: 2;
+        border-radius: 0 6px 6px 0;
+    }
 }
 
 
@@ -579,7 +586,7 @@ text {
     .dealer-area {
         text-align: center;
         order: 1;
-        margin-bottom: -40px;
+        margin-bottom: -60px;
     }
 
 
