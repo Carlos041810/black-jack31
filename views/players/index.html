@@ -83,7 +83,7 @@
                 <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="56"
                     text-anchor="middle" filter="url(#shadow)">
                     <textPath href="#curve-top" startOffset="50%">
-                        BLACKJACK PAY 3 TO 2
+                        BLACKJACK 31 PAYS 3 TO 2
                     </textPath>
                 </text>
 
@@ -91,7 +91,7 @@
                 <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="36"
                     text-anchor="middle" filter="url(#shadow)">
                     <textPath href="#curve-bottom" startOffset="50%">
-                        DEALER MUST STAND ON 17 AND DRAW TO 16
+                        DEALER MUST STAND ON 27 AND DRAW TO 26
                     </textPath>
                 </text>
             </svg>
@@ -159,6 +159,24 @@
             // Unirse a la sala
             if (roomCode && window.socket) {
                 window.socket.emit('joinRoom', roomCode, currentPlayerName);
+            }
+
+            // === MANEJO DEL MENÚ HAMBURGUESA ===
+            const menuToggle = document.getElementById('menuToggle');
+            const mobileMenu = document.getElementById('mobileMenu');
+
+            if (menuToggle && mobileMenu) {
+                menuToggle.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita que el evento de clic se propague al 'window'
+                    mobileMenu.classList.toggle('active');
+                });
+
+                // Listener para cerrar el menú si se hace clic fuera de él
+                window.addEventListener('click', (e) => {
+                    if (mobileMenu.classList.contains('active') && !mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
+                        mobileMenu.classList.remove('active');
+                    }
+                });
             }
 
             // === EVENT LISTENERS PARA ACCIONES ===
@@ -338,20 +356,20 @@
 
             // El dealer revela su carta
             window.socket.on('revealDealerCard', (data) => {
-                console.log('[DEALER REVEAL] El dealer revela su mano:', data.dealerHand);
+                console.log('[DEALER REVEAL] El dealer revela su mano completa:', data.dealerHand);
                 const dealerHandContainer = document.getElementById('dealerCards');
-                const hiddenCard = dealerHandContainer.querySelector('.card-back');
                 
-                if (hiddenCard && data.dealerHand.length > 1) {
-                    const revealedCardData = data.dealerHand[1];
-                    const revealedCardElement = createCardElement(revealedCardData);
-                    revealedCardElement.style.position = 'absolute'; // Mantener posicionamiento para el abanico
+                // Limpiar la mano actual del dealer (que contiene cartas ocultas)
+                dealerHandContainer.innerHTML = '';
 
-                    // Reemplazo simple
-                    hiddenCard.replaceWith(revealedCardElement);
-                    
-                    applyFanEffect(); // Re-aplicar el efecto abanico
-                }
+                // Renderizar la mano completa del dealer con todas las cartas visibles
+                data.dealerHand.forEach(cardData => {
+                    const cardElement = createCardElement(cardData);
+                    cardElement.style.position = 'absolute'; // Necesario para el efecto abanico
+                    dealerHandContainer.appendChild(cardElement);
+                });
+                
+                applyFanEffect(); // Re-aplicar el efecto abanico para ajustar las posiciones
             });
 
             // El dealer pide una carta (Hit)
@@ -412,9 +430,9 @@
                 const dealerScoreDisplay = document.createElement('div');
                 dealerScoreDisplay.className = 'dealer-score-display';
                 let dealerText = `Puntuación del Dealer: ${data.dealerScore}`;
-                if (data.dealerScore > 21) {
+                if (data.dealerScore > 31) {
                     dealerText += ' (BUST)';
-                } else if (data.dealerScore === 21 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
+                } else if (data.dealerScore === 31 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
                     dealerText += ' (BLACKJACK)';
                 }
                 dealerScoreDisplay.textContent = dealerText;
@@ -857,6 +875,10 @@
             playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] }));
             dealSequence.push({ target: 'dealer', card: dealerHand[1] });
 
+            // Ronda 3
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] }));
+            dealSequence.push({ target: 'dealer', card: dealerHand[2] });
+
             for (const deal of dealSequence) {
                 await dealOneCard(deal, deckRect);
             }
@@ -921,7 +943,7 @@
                 if (total === 0) return;
 
                 const maxAngle = 20; // Ángulo máximo de rotación
-                const horizontalSpread = 30; // Píxeles de separación entre cartas
+                const horizontalSpread = window.innerWidth < 568 ? 20 : 30; // Separación de cartas responsive
                 const totalWidth = (total - 1) * horizontalSpread;
 
                 cards.forEach((card, index) => {

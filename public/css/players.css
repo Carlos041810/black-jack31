@@ -22,6 +22,7 @@ body {
     align-items: center;
     border-bottom: 3px solid #D4AF37;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    position: relative; /* Para que el menú móvil se posicione relativo a la barra */
 }
 
 .left-group {
@@ -459,14 +460,19 @@ text {
 .mobile-menu {
     display: none;
     flex-direction: column;
-    gap: 10px;
+    gap: 15px; /* Espacio entre botones */
     position: absolute;
-    top: 50px;
-    right: 10px;
+    top: 100%; /* Justo debajo de la barra superior */
+    right: 0;
     background: rgba(0, 0, 0, 0.9);
-    padding: 15px;
-    border-radius: 8px;
-    z-index: 100;
+    padding: 20px;
+    border-radius: 10px;
+    z-index: 1100; /* Aumentado para estar por encima de todo */
+    min-width: 200px;
+}
+
+.mobile-menu.active {
+    display: flex;
 }
 
 /* Desktop: se muestra todo normal */
@@ -529,8 +535,39 @@ text {
 
 
 @media (max-width: 568px) {
+    .top-bar {
+        padding: 10px 10px; /* Reducir padding para acercar a los bordes */
+    }
+
+    .exit-btn {
+        padding: 8px 12px; /* Botón más pequeño */
+        font-size: 0.8em;
+    }
+
+    /* Reducir el contenedor del jugador */
+    .player-position {
+        padding: 8px;
+        margin: 5px;
+        gap: 8px; /* Reducir espacio interno */
+    }
+
+    /* Reducir el tamaño de las cartas y su contenedor */
+    .card, .card-slot {
+        width: 65px;
+        height: 95px;
+    }
+
+    .player-cards-hand {
+        min-height: 95px; /* Ajustar a la nueva altura de la carta */
+    }
+
+    /* Reducir el tamaño de la fuente en la información del jugador */
+    .player-name-display, .player-balance, .player-bet {
+        font-size: 0.85em;
+    }
+
     .player-cards {
-        gap: 30px;
+        gap: 15px;
         /* menos separación entre jugadores */
     }
 

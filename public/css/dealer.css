@@ -20,6 +20,7 @@ body {
     align-items: center;
     border-bottom: 3px solid #D4AF37;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    position: relative; /* Asegura que el menú móvil se posicione relativo a la barra */
 }
 
 .left-group {
@@ -566,6 +567,10 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+    .invite-section {
+        display: none;
+    }
+
     .menu-toggle {
         display: block;
     }
@@ -575,7 +580,6 @@ body {
     }
 
     .mobile-menu {
-        display: none;
         position: absolute;
         top: 100%;
         right: 0;
@@ -583,10 +587,14 @@ body {
         padding: 20px;
         border-radius: 10px;
         min-width: 200px;
+        display: none; /* Oculto por defecto */
+        flex-direction: column; /* Apila los botones verticalmente */
+        gap: 15px; /* Espacio entre botones */
+        z-index: 1100; /* Asegura que esté por encima de todo */
     }
 
     .mobile-menu.active {
-        display: block;
+        display: flex;
     }
 
     .sidebar {
@@ -601,13 +609,34 @@ body {
     .player-position {
         min-width: 180px;
         max-width: 220px;
+        padding: 15px;
     }
+
+    /* Reducir cartas para que quepan mejor */
+    .card {
+        width: 70px;
+        height: 105px;
+    }
+
+    .player-cards-hand {
+        height: 120px; /* Reducir altura para acomodar cartas más pequeñas */
+    }
+    
 }
 
 @media (max-width: 600px) {
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s;
+    }
+
+    .top-bar {
+        padding: 10px 10px; /* Reducir padding para acercar a los bordes */
+    }
+
+    .exit-btn {
+        padding: 8px 12px; /* Botón más pequeño */
+        font-size: 0.8em;
     }
 
     .sidebar.active {

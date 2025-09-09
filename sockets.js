@@ -29,7 +29,7 @@ function calculateHandValue(hand) {
             aces++;
         }
     }
-    while (sum > 21 && aces > 0) {
+    while (sum > 31 && aces > 0) {
         sum -= 10;
         aces--;
     }
@@ -79,7 +79,7 @@ async function playDealerAndDetermineWinners(roomCode, io) {
 
     // 2. Dealer pide cartas hasta llegar a 17 o más.
     let dealerScore = calculateHandValue(room.dealerHand);
-    while (dealerScore < 17) {
+    while (dealerScore < 27) {
         console.log(`[DEALER HIT] Dealer tiene ${dealerScore}, pide carta.`);
         const newCard = room.deck.pop();
         if (!newCard) {
@@ -108,10 +108,10 @@ function determineWinners(roomCode, io) {
     if (!room) return;
 
     const dealerScore = calculateHandValue(room.dealerHand);
-    const dealerBusted = dealerScore > 21;
-    const isDealerBlackjack = dealerScore === 21 && room.dealerHand.length === 2;
+    const dealerBusted = dealerScore > 31;
+    const isDealerBlackjack = dealerScore === 31 && room.dealerHand.length === 2;
     
-    console.log(`[RESULTS] Comparando puntuaciones. Dealer tiene: ${dealerScore} ${dealerBusted ? '(Bust)' : ''} ${isDealerBlackjack ? '(Blackjack)' : ''}`);
+    console.log(`[RESULTS] Comparando puntuaciones. Dealer tiene: ${dealerScore} ${dealerBusted ? '(Bust)' : ''} ${isDealerBlackjack ? '(Blackjack 31)' : ''}`);
     
     const results = [];
     
@@ -122,13 +122,13 @@ function determineWinners(roomCode, io) {
         }
         
         const playerScore = calculateHandValue(player.hand);
-        const playerBusted = playerScore > 21;
-        const isPlayerBlackjack = playerScore === 21 && player.hand.length === 2;
+        const playerBusted = playerScore > 31;
+        const isPlayerBlackjack = playerScore === 31 && player.hand.length === 2;
         
         let outcome = '';
         let winnings = 0;
         
-        // 1. El jugador se pasa de 21 (Bust). Pierde automáticamente.
+        // 1. El jugador se pasa de 31 (Bust). Pierde automáticamente.
         if (playerBusted) {
             outcome = 'LOSE';
             winnings = 0; // La apuesta ya fue descontada, no se devuelve nada.
@@ -149,12 +149,12 @@ function determineWinners(roomCode, io) {
             outcome = 'BLACKJACK';
             winnings = player.bet * 2.5; // Gana 1.5x la apuesta, total devuelto 2.5x
         
-        // 4. El dealer se pasa de 21 (y el jugador no, por la primera condición). Gana el jugador.
+        // 4. El dealer se pasa de 31 (y el jugador no, por la primera condición). Gana el jugador.
         } else if (dealerBusted) {
             outcome = 'WIN';
             winnings = player.bet * 2; // Gana 1x la apuesta, total devuelto 2x.
         
-        // 5. Nadie se ha pasado y no hay Blackjacks. Se comparan los puntos.
+        // 5. Nadie se ha pasado y no hay "Blackjack 31". Se comparan los puntos.
         } else if (playerScore > dealerScore) {
             outcome = 'WIN';
             winnings = player.bet * 2;
@@ -430,27 +430,35 @@ module.exports = (io, db) => {
 
             const playersWithBets = room.players.filter(p => p.betConfirmed && p.bet > 0);
 
-            // Repartir primera ronda (jugadores y luego dealer)
+            // Repartir primera ronda
             playersWithBets.forEach(player => {
                 player.hand.push(room.deck.pop());
             });
-            room.dealerHand.push(room.deck.pop()); // Primera del dealer, visible
+            room.dealerHand.push(room.deck.pop());
 
             // Repartir segunda ronda
             playersWithBets.forEach(player => {
                 player.hand.push(room.deck.pop());
             });
-            room.dealerHand.push(room.deck.pop()); // Segunda del dealer, oculta
+            room.dealerHand.push(room.deck.pop());
+
+            // Repartir tercera ronda
+            playersWithBets.forEach(player => {
+                player.hand.push(room.deck.pop());
+            });
+            room.dealerHand.push(room.deck.pop());
 
             // Preparar datos para enviar a los clientes
             const playersHands = room.players.map(p => ({
                 id: p.id,
                 hand: p.hand
             }));
-
+            
+            // Para los jugadores, las dos primeras cartas del dealer están ocultas y la tercera es visible.
             const dealerHandForPlayers = [
-                room.dealerHand[0], // Primera carta visible
-                { hidden: true }   // Segunda carta oculta
+                { hidden: true },   // Primera carta oculta
+                { hidden: true },   // Segunda carta oculta
+                room.dealerHand[2]  // Tercera carta visible
             ];
 
             // Enviar a los jugadores (todos en la sala MENOS el que hizo la petición)
@@ -508,7 +516,7 @@ module.exports = (io, db) => {
             });
 
             // Si el jugador se pasa de 21
-            if (handValue > 21) {
+            if (handValue > 31) {
                 console.log(`[BUST] Jugador ${currentPlayer.name} se ha pasado con ${handValue}.`);
                 io.to(roomCode).emit('playerBust', {
                     playerId: socket.id,
@@ -540,11 +548,11 @@ module.exports = (io, db) => {
         socket.on('dealerRevealCard', () => {
             const roomCode = socket.roomCode;
             const room = rooms[roomCode];
-            if (!room) return;
+            if (!room || !room.dealerHand || room.dealerHand.length === 0) return;
 
             // Idealmente, verificar que el emisor es el dealer.
             // En este diseño, solo la vista del dealer tiene el botón, así que es implícito.
-
+            
             console.log(`[DEALER ACTION] El dealer revela su carta en la sala ${roomCode}`);
 
             // Iniciar la secuencia de juego del dealer y la determinación de ganadores.
