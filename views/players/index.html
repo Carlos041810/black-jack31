@@ -15,6 +15,12 @@
             <button class="exit-btn" onclick="exitRoom()">
                 <i class="fas fa-door-open"></i> EXIT ROOM
             </button>
+            <!-- El contador de jugadores ahora está en el header -->
+            <div class="online-status">
+                <div class="status-icon"></div>
+                <span class="user-icon">👥</span>
+                <h2 id="contador">0</h2>
+            </div>
         </div>
 
         <div class="dealer-title">PLAYER VIEW</div>
@@ -34,15 +40,6 @@
         <!-- Botón normal en escritorio -->
         <button class="how-to-play desktop-only">🔊 HOW TO PLAY</button>
     </header>
-
-    <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="online-status">
-            <div class="status-icon"></div>
-            <span class="user-icon">👥</span>
-            <h2 id="contador">0</h2>
-        </div>
-    </div>
 
     <!-- ÁREA DE JUEGO PRINCIPAL -->
     <div class="game-area">

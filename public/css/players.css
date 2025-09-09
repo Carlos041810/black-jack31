@@ -69,21 +69,34 @@ body {
 
 /*SIDEBAR*/
 
-.sidebar {
-    margin: 20px;
-    position: fixed;
-    left: 0;
+.online-status {
+    display: none; /* Oculto en pantallas grandes */
+    align-items: center;
+    gap: 10px;
+    color: #D4AF37;
+}
 
-    gap: 8px;
-    color: #27ae60;
+.online-status .user-icon {
+    font-size: 1.5em;
+}
+
+.online-status #contador {
+    font-size: 1.5em;
     font-weight: bold;
-    font-size: 14px;
-    padding: 10px;
-    background-color: rgba(39, 174, 96, 0.1);
-    border-radius: 6px;
-    border-left: 3px solid #27ae60;
+}
 
+.online-status .status-icon {
+    width: 10px;
+    height: 10px;
+    background: #27ae60;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
 
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
 }
 
 
@@ -155,7 +168,7 @@ text {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 400px;
+    gap: 200px;
     margin-top: 20px;
     min-height: 120px;
     margin-bottom: 20px;
@@ -331,7 +344,7 @@ text {
            EFECTOS DE CURVA PARA CARTAS
            ========================= */
 .curve-left {
-    transform: translateY(-25px) rotate(15deg);
+    transform: translateX(0) translateY(-25px) rotate(15deg);
 }
 
 .curve-center {
@@ -339,7 +352,7 @@ text {
 }
 
 .curve-right {
-    transform: translateY(-25px) rotate(-15deg);
+    transform: translateX(0) translateY(-25px) rotate(-15deg);
 }
 
 /* =========================
@@ -586,7 +599,7 @@ text {
 
 @media (max-width: 1220px) {
     .player-cards {
-        gap: 150px;
+        gap: 100px;
         /* menos separación */
     }
 
@@ -602,9 +615,11 @@ text {
     }
 }
 
+
+
 @media (max-width: 720px) {
     .player-cards {
-        gap: 40px;
+        gap: 0;
         /* menos separación entre jugadores */
     }
 
@@ -626,11 +641,6 @@ text {
         min-width: 90px; /* Ancho mínimo más pequeño */
     }
 
-    .player-cards {
-        gap: 70px;
-        /* menos separación entre jugadores */
-    }
-
     .player-area {
         order: 2;
         margin-top: -50px;
@@ -641,19 +651,49 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -30px;
+        margin-top: -70px;
+        gap: 35px; /* 10% menos de 50px */
+        min-height: 120px; /* 10% menos de 150px */
     }
 
-    .sidebar {
-        margin: 0;
-        top: 60px; /* Posición justo debajo de la barra superior */
-        left: 2;
-        border-radius: 0 6px 6px 0;
+    .online-status {
+        display: flex; /* Se muestra en pantallas pequeñas */
+    }
+
+    .dealer-hand {
+        min-height: 105px; /* 10% menos de 120px */
+    }
+
+    /* Reducción del 10% para cartas y pila */
+    .card, .deck-pile, .card-slot {
+        width: 72px;
+        height: 105px;
+    }
+
+    .svg-container {
+        margin-top: -40px; /* Sube el texto decorativo */
+    }
+
+    /* Sube más a los jugadores de los lados en pantallas medianas */
+    .curve-left {
+        transform: translateY(-60px) translateX(60%) rotate(10deg);
+    }
+
+    .curve-right {
+        transform: translateY(-60px) translateX(-60%) rotate(-10deg);
+    }
+    .curve-center {
+        transform: translateY(60px);
     }
 }
 
 
 @media (max-width: 568px) {
+        .player-cards {
+        gap:-70px;
+        /* menos separación entre jugadores */
+    }
+
     .top-bar {
         padding: 10px 10px; /* Reducir padding para acercar a los bordes */
     }
