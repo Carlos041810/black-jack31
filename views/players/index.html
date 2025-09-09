@@ -107,20 +107,24 @@
 
     <!-- ÁREA DE APUESTAS -->
     <div class="betting-area" id="bettingArea" style="display: none;">
-        <div class="balance-info">
-            <div>Balance</div>
-            <div id="balance">$100</div>
+        <div class="betting-modal-content">
+            <div class="balance-info">
+                <div>Balance</div>
+                <div id="balance">$100</div>
+            </div>
+            <div>Total Bet<br><span id="totalBet">$0</span></div>
+            <div class="chips">
+                <div class="chip chip-10" onclick="placeBet(10)">$10</div>
+                <div class="chip chip-25" onclick="placeBet(25)">$25</div>
+                <div class="chip chip-50" onclick="placeBet(50)">$50</div>
+                <div class="chip chip-100" onclick="placeBet(100)">$100</div>
+            </div>
+            <div class="betting-buttons">
+                <button onclick="clearBet()">CLEAR</button>
+                <button onclick="maxBet()">MAX</button> 
+                <button id="confirmBetBtn" onclick="confirmBet()">CONFIRM BET</button>
+            </div>
         </div>
-        <div>Total Bet<br><span id="totalBet">$0</span></div>
-        <div class="chips">
-            <div class="chip chip-10" onclick="placeBet(10)">$10</div>
-            <div class="chip chip-25" onclick="placeBet(25)">$25</div>
-            <div class="chip chip-50" onclick="placeBet(50)">$50</div>
-            <div class="chip chip-100" onclick="placeBet(100)">$100</div>
-        </div>
-        <button onclick="clearBet()">CLEAR</button>
-        <button onclick="maxBet()">MAX</button> 
-        <button id="confirmBetBtn" onclick="confirmBet()">CONFIRM BET</button>
     </div>
 
     <!-- ÁREA DE ACCIONES DEL JUGADOR -->
@@ -484,12 +488,9 @@
 
                 if (player.betConfirmed && player.bet > 0) {
                     // Apuesta confirmada
-                    floatingBetHtml = `<div class="confirmed-bet-floater">$${player.bet}</div>`;
-                    betDisplay = `
-                        <div class="bet-confirmed-icon">
-                            <i class="fas fa-check-circle"></i> 
-                            <span>Confirmado</span>
-                        </div>`;
+                    floatingBetHtml = ``; // Ya no se necesita el globo flotante
+                    // Mostrar el monto de la apuesta en lugar del ícono
+                    betDisplay = `<div class="bet-confirmed-icon">$${player.bet}</div>`;
                     betStatusClass = 'bet-confirmed';
                 } else if (player.bet > 0) {
                     // Apuesta pendiente
@@ -497,7 +498,7 @@
                     betStatusClass = 'bet-pending';
                 } else {
                     // Sin apuesta
-                    betDisplay = `<div class="no-bet">Sin apuesta</div>`;
+                    betDisplay = ``;
                     betStatusClass = 'no-bet';
                 }
 
@@ -511,8 +512,7 @@
                             Esperando cartas...
                         </div>
                     </div>
-                    <div class="player-bet ${betStatusClass}">${betDisplay}</div>
-                    <div class="player-balance">Balance: $${player.balance || 0}</div>`;
+                    <div class="player-bet ${betStatusClass}">${betDisplay}</div>`;
                 
                 playerCardsContainer.appendChild(playerDiv);
             });
@@ -546,7 +546,6 @@
                         margin: 10px;
                         padding: 10px;
                         border-radius: 10px;
-                        background: rgba(0, 0, 0, 0.3);
                         border: 2px solid transparent;
                         transition: all 0.3s ease;
                     }
@@ -613,56 +612,6 @@
                         text-shadow: 2px 2px 5px #000;
                         z-index: 20;
                         pointer-events: none;
-                    }
-
-                    .stand-indicator {
-                        font-weight: bold;
-                        color: #3498db;
-                    }
-
-                    .player-actions {
-                        position: fixed;
-                        bottom: 20px;
-                        left: 50%;
-                        transform: translateX(-50%);
-                        display: flex;
-                        gap: 15px;
-                        background: rgba(0, 0, 0, 0.7);
-                        padding: 15px;
-                        border-radius: 20px;
-                        border: 2px solid #D4AF37;
-                        z-index: 100;
-                        box-shadow: 0 -5px 20px rgba(0,0,0,0.4);
-                    }
-
-                    .action-btn {
-                        padding: 12px 25px;
-                        font-size: 1em;
-                        font-weight: bold;
-                        border-radius: 10px;
-                        border: none;
-                        cursor: pointer;
-                        transition: all 0.2s ease;
-                        text-transform: uppercase;
-                        min-width: 120px;
-                        text-align: center;
-                    }
-
-                    .action-btn.hit { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; }
-                    .action-btn.stand { background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; }
-                    .action-btn.double { background: linear-gradient(45deg, #3498db, #2980b9); color: white; }
-                    .action-btn.split { background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; }
-
-                    .action-btn:hover:not(:disabled) {
-                        transform: translateY(-3px) scale(1.05);
-                        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-                    }
-
-                    .action-btn:disabled {
-                        background: #555;
-                        color: #999;
-                        cursor: not-allowed;
-                        opacity: 0.6;
                     }
 
                     .card-slot {
@@ -1037,6 +986,9 @@
             // Confirmar en el servidor
             window.socket.emit('playerConfirmBet');
             console.log(`Confirmando apuesta de $${currentBet}`);
+
+            // Ocultar el modal inmediatamente para este jugador
+            bettingArea.style.display = 'none';
         }
 
         // === FUNCIONES DE UTILIDAD ===
