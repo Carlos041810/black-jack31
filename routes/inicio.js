@@ -43,6 +43,12 @@
 
         if (result.rows.length > 0) {
             const mesa = result.rows[0];
+            // 1 dealer + 3 jugadores = 4. Si ya hay 4, la mesa está llena.
+            if (mesa.jugadores_actual >= 4) { 
+                console.log(`Intento de unirse a mesa llena ${codigo}. Jugadores: ${mesa.jugadores_actual}`);
+                return res.status(403).json({ success: false, existe: true, error: "La mesa está completa." });
+            }
+
             const nuevosJugadores = mesa.jugadores_actual + 1;
 
             // Sumar 1 al campo jugadores_actual
@@ -60,7 +66,7 @@
 
             res.json({ success: true, existe: true });
         } else {
-            console.log(`La mesa con código ${codigo} no fue encontrada o está inactiva.`);
+            console.log(`La mesa con código ${codigo} no fue encontrada o está cancelada.`);
             res.status(404).json({ success: false, existe: false, error: "Mesa no encontrada o inactiva" });
         }
         } catch (error) {

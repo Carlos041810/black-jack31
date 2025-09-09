@@ -65,57 +65,109 @@ function playDealerTurn(roomCode, io) {
     // ya ha notificado a los clientes.
 }
 
+// Helper para añadir un delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+// Lógica para el turno del dealer y determinar ganadores
+async function playDealerAndDetermineWinners(roomCode, io) {
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    // 1. Revelar la carta oculta (la notificación se envía aquí para que los clientes reaccionen)
+    io.to(roomCode).emit('revealDealerCard', { dealerHand: room.dealerHand });
+    await delay(1500); // Pausa para que los jugadores vean la carta revelada.
+
+    // 2. Dealer pide cartas hasta llegar a 17 o más.
+    let dealerScore = calculateHandValue(room.dealerHand);
+    while (dealerScore < 17) {
+        console.log(`[DEALER HIT] Dealer tiene ${dealerScore}, pide carta.`);
+        const newCard = room.deck.pop();
+        if (!newCard) {
+            console.error('No quedan cartas en la baraja para el dealer.');
+            break;
+        }
+        room.dealerHand.push(newCard);
+        
+        // Notificar a todos que el dealer recibió una carta
+        io.to(roomCode).emit('dealerCardUpdate', { newCard: newCard });
+        
+        dealerScore = calculateHandValue(room.dealerHand);
+        await delay(1500); // Pausa entre cartas
+    }
+
+    console.log(`[DEALER STAND] Dealer se planta con ${dealerScore}.`);
+
+    // 3. Determinar ganadores
+    await delay(1000); // Pausa final antes de mostrar resultados
+    determineWinners(roomCode, io);
+}
+
 // Lógica para determinar los ganadores
 function determineWinners(roomCode, io) {
     const room = rooms[roomCode];
     if (!room) return;
 
     const dealerScore = calculateHandValue(room.dealerHand);
-    const dealerBusted = dealerScore > 21; // Poco probable con 2 cartas, pero se incluye por robustez.
+    const dealerBusted = dealerScore > 21;
     const isDealerBlackjack = dealerScore === 21 && room.dealerHand.length === 2;
-
-    console.log(`[RESULTS] Comparando puntuaciones. Dealer tiene: ${dealerScore}`);
-
+    
+    console.log(`[RESULTS] Comparando puntuaciones. Dealer tiene: ${dealerScore} ${dealerBusted ? '(Bust)' : ''} ${isDealerBlackjack ? '(Blackjack)' : ''}`);
+    
     const results = [];
-
+    
     room.players.forEach(player => {
         // Solo procesar jugadores que confirmaron su apuesta
         if (!player.betConfirmed || player.bet === 0) {
             return;
         }
-
+        
         const playerScore = calculateHandValue(player.hand);
         const playerBusted = playerScore > 21;
         const isPlayerBlackjack = playerScore === 21 && player.hand.length === 2;
-
+        
         let outcome = '';
         let winnings = 0;
-
+        
+        // 1. El jugador se pasa de 21 (Bust). Pierde automáticamente.
         if (playerBusted) {
             outcome = 'LOSE';
-            winnings = 0; // La apuesta ya se descontó
+            winnings = 0; // La apuesta ya fue descontada, no se devuelve nada.
+        
+        // 2. El dealer tiene Blackjack.
         } else if (isDealerBlackjack) {
-            outcome = isPlayerBlackjack ? 'PUSH' : 'LOSE';
-            winnings = isPlayerBlackjack ? player.bet : 0;
+            // Si el jugador también tiene Blackjack, es un empate (Push). Si no, pierde.
+            if (isPlayerBlackjack) {
+                outcome = 'PUSH';
+                winnings = player.bet; // Se devuelve la apuesta.
+            } else {
+                outcome = 'LOSE';
+                winnings = 0;
+            }
+        
+        // 3. El jugador tiene Blackjack (y el dealer no, por el 'else if' anterior). Gana 3:2.
         } else if (isPlayerBlackjack) {
             outcome = 'BLACKJACK';
             winnings = player.bet * 2.5; // Gana 1.5x la apuesta, total devuelto 2.5x
+        
+        // 4. El dealer se pasa de 21 (y el jugador no, por la primera condición). Gana el jugador.
         } else if (dealerBusted) {
             outcome = 'WIN';
-            winnings = player.bet * 2;
+            winnings = player.bet * 2; // Gana 1x la apuesta, total devuelto 2x.
+        
+        // 5. Nadie se ha pasado y no hay Blackjacks. Se comparan los puntos.
         } else if (playerScore > dealerScore) {
             outcome = 'WIN';
-            winnings = player.bet * 2; // Gana 1x la apuesta, total devuelto 2x
+            winnings = player.bet * 2;
         } else if (playerScore < dealerScore) {
             outcome = 'LOSE';
             winnings = 0;
-        } else { // Empate
+        } else { // Empate (playerScore === dealerScore)
             outcome = 'PUSH';
             winnings = player.bet; // Se devuelve la apuesta
         }
-
+        
         player.balance += winnings; // Se actualiza el saldo del jugador
-
+        
         results.push({
             playerId: player.id,
             playerName: player.name,
@@ -124,7 +176,7 @@ function determineWinners(roomCode, io) {
             newBalance: player.balance
         });
     });
-
+    
     room.gameState = GAME_STATES.FINISHED;
     io.to(roomCode).emit('gameResults', { results, dealerScore });
     io.to(roomCode).emit('gameStateUpdate', { state: GAME_STATES.FINISHED });
@@ -152,12 +204,21 @@ module.exports = (io, db) => {
                     console.log(`🃏 Baraja creada y barajada para la sala ${roomCode}. Total: ${shuffledDeck.length} cartas.`);
                 }
 
+                const room = rooms[roomCode];
+
+                // Limitar el número de jugadores a 3 (el dealer no cuenta en este array)
+                if (playerName && room.players.length >= 3) {
+                    console.log(`Intento de unirse a sala llena ${roomCode} por ${playerName}. Jugadores: ${room.players.length}`);
+                    socket.emit('error', { message: 'La mesa está completa. No se pueden unir más de 3 jugadores.' });
+                    return; // Detener la ejecución para no unir al jugador
+                }
+
                 socket.join(roomCode);
                 socket.roomCode = roomCode;
 
                 if (playerName) {
                     console.log(`Jugador '${playerName}' (ID: ${socket.id}) se une a la sala ${roomCode}`);
-                    rooms[roomCode].players.push({ 
+                    room.players.push({ 
                         id: socket.id, 
                         name: playerName, 
                         bet: 0, 
@@ -168,11 +229,8 @@ module.exports = (io, db) => {
                     console.log(`Un espectador (Dealer) (ID: ${socket.id}) se unió a la sala ${roomCode}`);
                 }
 
-                io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
-                io.to(roomCode).emit('gameStateUpdate', { 
-                    state: rooms[roomCode].gameState,
-                    bettingConfig: BETTING_CONFIG 
-                });
+                io.to(roomCode).emit('updatePlayerList', room.players);
+                io.to(roomCode).emit('gameStateUpdate', { state: room.gameState, bettingConfig: BETTING_CONFIG });
 
             } catch (error) {
                 console.error(`Error en joinRoom para sala ${roomCode}:`, error);
@@ -489,11 +547,8 @@ module.exports = (io, db) => {
 
             console.log(`[DEALER ACTION] El dealer revela su carta en la sala ${roomCode}`);
 
-            // Emitir a todos los clientes para que actualicen la vista
-            io.to(roomCode).emit('revealDealerCard', { dealerHand: room.dealerHand });
-
-            // Una vez revelada la carta, determinar los ganadores tras un breve instante
-            setTimeout(() => determineWinners(roomCode, io), 1500); // Delay para que se vea la carta
+            // Iniciar la secuencia de juego del dealer y la determinación de ganadores.
+            playDealerAndDetermineWinners(roomCode, io);
         });
 
         // Evento para reiniciar el juego a la fase de apuestas (solo dealer)
@@ -508,6 +563,7 @@ module.exports = (io, db) => {
                 player.bet = 0;
                 player.betConfirmed = false;
                 player.hand = []; // Limpiar mano
+                player.balance = BETTING_CONFIG.INITIAL_BALANCE; // Restaurar saldo inicial
             });
 
             // Reiniciar mano del dealer y barajar una nueva baraja

@@ -354,6 +354,22 @@
                 }
             });
 
+            // El dealer pide una carta (Hit)
+            window.socket.on('dealerCardUpdate', (data) => {
+                console.log(`[DEALER HIT] Dealer recibe una carta.`);
+                
+                const deckElement = document.querySelector('.deck-pile');
+                if (!deckElement) return;
+                const deckRect = deckElement.getBoundingClientRect();
+
+                const dealInfo = {
+                    target: 'dealer',
+                    card: data.newCard,
+                };
+                // Animar la carta que pide el dealer
+                dealOneCard(dealInfo, deckRect);
+            });
+
             // Resultados del juego
             window.socket.on('gameResults', (data) => {
                 console.log('[RESULTS] Resultados recibidos:', data);

@@ -305,6 +305,7 @@ function setupSocketEvents() {
         highlightCurrentPlayer(null);
         // Mostrar el botón para revelar la carta
         document.getElementById('revealCardBtn').style.display = 'inline-block';
+        document.getElementById('revealCardBtn').disabled = false; // Asegurarse de que esté habilitado
         updateControlButtons();
     });
 
@@ -327,6 +328,22 @@ function setupSocketEvents() {
             // Re-aplicar el efecto abanico para ajustar las posiciones de todas las cartas
             applyFanEffect();
         }
+    });
+
+    // El dealer pide una carta (Hit)
+    socket.on('dealerCardUpdate', (data) => {
+        console.log(`[DEALER HIT] Dealer recibe una carta.`);
+        
+        const deckElement = document.querySelector('.deck-pile');
+        if (!deckElement) return;
+        const deckRect = deckElement.getBoundingClientRect();
+
+        const dealInfo = {
+            target: 'dealer',
+            card: data.newCard
+        };
+        // Animar la carta que pide el dealer
+        dealOneCard(dealInfo, deckRect);
     });
 
     // Resultados del juego
@@ -406,6 +423,7 @@ function setupSocketEvents() {
             if (overlay) overlay.remove();
         });
         document.getElementById('revealCardBtn').style.display = 'none';
+        document.getElementById('revealCardBtn').disabled = false; // Resetear para la siguiente ronda
         // Remover puntuación del dealer
         const dealerScore = document.querySelector('.dealer-score-display');
         if (dealerScore) dealerScore.remove();
@@ -627,8 +645,8 @@ function updateControlButtons() {
 
 function revealDealerCardAction() {
     console.log('-> Emitiendo dealerRevealCard');
+    document.getElementById('revealCardBtn').disabled = true; // Deshabilitar para evitar clics múltiples
     socket.emit('dealerRevealCard');
-    document.getElementById('revealCardBtn').style.display = 'none'; // Ocultar inmediatamente
 }
 
 // === FUNCIONES DE TIMER ===
