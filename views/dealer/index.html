@@ -904,14 +904,7 @@ function applyFanEffect() {
     const hands = document.querySelectorAll('.player-cards-hand, .dealer-hand');
 
     hands.forEach(hand => {
-        // Asegurarse de que el contenedor de la mano tenga posición relativa
         hand.style.position = 'relative';
-        // Y una altura mínima para que no colapse si solo tiene elementos absolutos
-        if (hand.querySelectorAll('.card').length > 0) {
-            hand.style.minHeight = '120px'; // Altura aprox. de una carta
-        } else {
-            hand.style.minHeight = 'auto'; // Resetear si no hay cartas
-        }
 
         const cards = hand.querySelectorAll('.card');
         const total = cards.length;

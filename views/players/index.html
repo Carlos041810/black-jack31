@@ -132,9 +132,6 @@
         <button id="splitBtn" class="action-btn split" disabled>Dividir</button>
     </div>
 
-    <!-- BOTÓN SALIR -->
-    <button class="leave-table" onclick="exitRoom()">🚪 LEAVE TABLE</button>
-
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/sidebar.js"></script>
     <script>
@@ -563,22 +560,57 @@
                     }
                     
                     .player-position.current-turn {
-                        border-color: #3498db;
-                        box-shadow: 0 0 20px rgba(52, 152, 219, 0.7);
-                        transform: scale(1.05);
+                        /* El borde y el resplandor del contenedor se han eliminado */
+                    }
+
+                    /* Se añade un borde y resplandor a la primera y última carta del jugador activo */
+                    .player-position.current-turn .player-cards-hand .card:first-child,
+                    .player-position.current-turn .player-cards-hand .card:last-child {
+                        border: 2px solid #4eb8ff;
+                        box-shadow: 0 0 10px rgba(78, 184, 255, 0.8);
+                    }
+
+                    /* --- ESTILOS PARA EL TURNO ACTUAL COMBINADOS CON LA CURVA --- */
+
+                    /* Vista para Escritorio (por defecto) */
+                    .player-position.curve-left.current-turn {
+                        transform: translateX(0) translateY(-25px) rotate(15deg) scale(1.05);
+                    }
+                    .player-position.curve-center.current-turn {
+                        transform: translateY(0px) rotate(0deg) scale(1.05);
+                    }
+                    .player-position.curve-right.current-turn {
+                        transform: translateX(0) translateY(-25px) rotate(-15deg) scale(1.05);
+                    }
+
+                    /* Sobreescritura para pantallas pequeñas (móviles) */
+                    @media (max-width: 720px) {
+                        .player-position.curve-left.current-turn {
+                            transform: translateY(-60px) translateX(60%) rotate(10deg) scale(1.05);
+                        }
+                        .player-position.curve-right.current-turn {
+                            transform: translateY(-60px) translateX(-60%) rotate(-10deg) scale(1.05);
+                        }
+                        .player-position.curve-center.current-turn {
+                            transform: translateY(100px) scale(1.05);
+                        }
                     }
 
                     .turn-display-message {
+                        position: absolute;
+                        bottom: 220px; /* Posición sobre los botones de acción y cartas */
+                        left: 50%;
+                        transform: translateX(-50%);
+                        width: 90%;
+                        max-width: 450px;
                         text-align: center;
                         padding: 10px 20px;
-                        margin-bottom: -20px;
                         background: rgba(0, 0, 0, 0.4);
                         border-radius: 8px;
                         font-size: 1.2em;
                         color: #fff;
                         border: 1px solid rgba(255, 255, 255, 0.2);
                         transition: all 0.3s;
-                        position: relative;
                         z-index: 5;
                     }
 
@@ -693,7 +725,10 @@
             style.innerHTML = `
                 .result-overlay {
                     position: absolute;
-                    top: 0; left: 0; right: 0; bottom: 0;
+                    top: 0;
+                    left: -30px; /* Ensanchar para cubrir el abanico */
+                    right: -30px; /* Ensanchar para cubrir el abanico */
+                    bottom: 0;
                     background: rgba(0, 0, 0, 0.7);
                     color: white;
                     display: flex;
@@ -767,11 +802,13 @@
             const playerActions = document.getElementById('playerActions');
 
             if (isMyTurn) {
-                turnDisplay.innerHTML = `<span>Es <strong>tu turno</strong> para jugar.</span>`;
+                // Ocultamos el mensaje cuando es el turno del jugador.
+                turnDisplay.style.display = 'none';
                 turnDisplay.classList.add('my-turn');
                 playerActions.style.display = 'flex';
             } else {
                 playerActions.style.display = 'none';
+                turnDisplay.style.display = 'block'; // Nos aseguramos de que el mensaje sea visible para los otros turnos.
                 if (playerId) { // Otro jugador
                     turnDisplay.innerHTML = `<span>Turno de <strong>${playerName}</strong>. Espera tu momento.</span>`;
                 } else { // Turno del dealer o estado intermedio
@@ -875,14 +912,7 @@
             const hands = document.querySelectorAll('.player-cards-hand, #dealerCards');
 
             hands.forEach(hand => {
-                // Asegurarse de que el contenedor de la mano tenga posición relativa
                 hand.style.position = 'relative';
-                // Y una altura mínima para que no colapse si solo tiene elementos absolutos
-                if (hand.querySelectorAll('.card').length > 0) {
-                    hand.style.minHeight = '120px'; // Altura aprox. de una carta
-                } else {
-                    hand.style.minHeight = 'auto'; // Resetear si no hay cartas
-                }
 
                 const cards = hand.querySelectorAll('.card');
                 const total = cards.length;

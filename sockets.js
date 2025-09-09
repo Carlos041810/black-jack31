@@ -610,18 +610,22 @@ module.exports = (io, db) => {
 
                     try {
                         await db.execute({
-                            sql: "UPDATE mesas SET jugadores_actual = GREATEST(0, jugadores_actual - 1) WHERE codigo = ?",
+                            // Usamos MAX(0, ...) en lugar de GREATEST para mayor compatibilidad con SQLite.
+                            sql: "UPDATE mesas SET jugadores_actual = MAX(0, jugadores_actual - 1) WHERE codigo = ?",
                             args: [roomCode]
                         });
                     } catch (dbError) {
                         console.error(`Error actualizando DB en disconnect:`, dbError);
                     }
 
-                    io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
+                    // Volver a verificar si la sala existe, ya que otra desconexión podría haberla eliminado.
+                    if (rooms[roomCode]) {
+                        io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
 
-                    if (rooms[roomCode].players.length === 0) {
-                        console.log(`Sala ${roomCode} vacía. Limpiando...`);
-                        delete rooms[roomCode];
+                        if (rooms[roomCode].players.length === 0) {
+                            console.log(`Sala ${roomCode} vacía. Limpiando...`);
+                            delete rooms[roomCode];
+                        }
                     }
                 }
             }

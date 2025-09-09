@@ -479,21 +479,6 @@ text {
     color: white;
 }
 
-/* =========================
-           BOTÓN SALIR DE MESA
-           ========================= */
-.leave-table {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0, 0, 0, 0.3);
-    color: white;
-    border: 1px solid white;
-    padding: 10px 15px;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
 /* Hamburguesa oculta en escritorio */
 .menu-toggle {
     display: none;
@@ -651,7 +636,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -70px;
+        margin-top: -85px;
         gap: 35px; /* 10% menos de 50px */
         min-height: 120px; /* 10% menos de 150px */
     }
@@ -683,7 +668,7 @@ text {
         transform: translateY(-60px) translateX(-60%) rotate(-10deg);
     }
     .curve-center {
-        transform: translateY(60px);
+    transform: translateY(100px); /* siempre más abajo */
     }
 }
 
@@ -750,11 +735,5 @@ text {
 }
 .player-cards-hand {
     position: relative;
-    min-height: 120px;
-}
-
-.dealer-hand .card, .player-cards-hand .card {
-    position: absolute;
-    top: 0;
-    left: calc(var(--card-index) * 30px);
+    height: 120px; /* Fijar altura para evitar saltos de layout */
 }
