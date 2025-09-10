@@ -49,8 +49,8 @@ function advanceTurn(roomCode, io) {
         io.to(roomCode).emit('turnUpdate', { playerId: nextPlayer.id, playerName: nextPlayer.name });
     } else {
         // Es el turno del dealer
-        io.to(roomCode).emit('dealerTurn'); // Notifica a los clientes que el turno del dealer comienza
-        playDealerTurn(roomCode, io); // Inicia la lógica del dealer en el servidor
+        io.to(roomCode).emit('dealerTurn'); // Notifica a los clientes que el turno del dealer ha comenzado.
+        playDealerAndDetermineWinners(roomCode, io); // Inicia la lógica del dealer y la determinación de ganadores.
     }
 }
 
@@ -63,43 +63,6 @@ function playDealerTurn(roomCode, io) {
     // La lógica ahora es pasiva. El servidor espera a que el dealer
     // presione el botón para revelar su carta. El evento 'dealerTurn'
     // ya ha notificado a los clientes.
-}
-
-// Helper para añadir un delay
-const delay = ms => new Promise(res => setTimeout(res, ms));
-
-// Lógica para el turno del dealer y determinar ganadores
-async function playDealerAndDetermineWinners(roomCode, io) {
-    const room = rooms[roomCode];
-    if (!room) return;
-
-    // 1. Revelar la carta oculta (la notificación se envía aquí para que los clientes reaccionen)
-    io.to(roomCode).emit('revealDealerCard', { dealerHand: room.dealerHand });
-    await delay(1500); // Pausa para que los jugadores vean la carta revelada.
-
-    // 2. Dealer pide cartas hasta llegar a 17 o más.
-    let dealerScore = calculateHandValue(room.dealerHand);
-    while (dealerScore < 27) {
-        console.log(`[DEALER HIT] Dealer tiene ${dealerScore}, pide carta.`);
-        const newCard = room.deck.pop();
-        if (!newCard) {
-            console.error('No quedan cartas en la baraja para el dealer.');
-            break;
-        }
-        room.dealerHand.push(newCard);
-        
-        // Notificar a todos que el dealer recibió una carta
-        io.to(roomCode).emit('dealerCardUpdate', { newCard: newCard });
-        
-        dealerScore = calculateHandValue(room.dealerHand);
-        await delay(1500); // Pausa entre cartas
-    }
-
-    console.log(`[DEALER STAND] Dealer se planta con ${dealerScore}.`);
-
-    // 3. Determinar ganadores
-    await delay(1000); // Pausa final antes de mostrar resultados
-    determineWinners(roomCode, io);
 }
 
 // Lógica para determinar los ganadores
@@ -180,6 +143,44 @@ function determineWinners(roomCode, io) {
     room.gameState = GAME_STATES.FINISHED;
     io.to(roomCode).emit('gameResults', { results, dealerScore });
     io.to(roomCode).emit('gameStateUpdate', { state: GAME_STATES.FINISHED });
+}
+
+// Helper para añadir un delay
+const delay = ms => new Promise(res => setTimeout(res, ms));
+
+// Lógica para el turno del dealer y determinar ganadores
+async function playDealerAndDetermineWinners(roomCode, io) {
+    const room = rooms[roomCode];
+    if (!room) return;
+
+    // Si no hay jugadores activos (todos se pasaron), simplemente determinamos los ganadores.
+    const activePlayers = room.players.filter(p => p.betConfirmed && calculateHandValue(p.hand) <= 31);
+    if (activePlayers.length === 0) {
+        console.log('[DEALER SKIP] Todos los jugadores se pasaron. Determinando resultados.');
+        determineWinners(roomCode, io);
+        return;
+    }
+
+    // 1. Revelar la carta oculta
+    io.to(roomCode).emit('revealDealerCard', { dealerHand: room.dealerHand });
+    await delay(1500);
+
+    // 2. Dealer pide cartas
+    let dealerScore = calculateHandValue(room.dealerHand);
+    while (dealerScore < 27) {
+        const newCard = room.deck.pop();
+        if (!newCard) break;
+        room.dealerHand.push(newCard);
+        io.to(roomCode).emit('dealerCardUpdate', { newCard: newCard });
+        dealerScore = calculateHandValue(room.dealerHand);
+        await delay(1500);
+    }
+
+    console.log(`[DEALER STAND] Dealer se planta con ${dealerScore}.`);
+
+    // 3. Determinar ganadores
+    await delay(1000);
+    determineWinners(roomCode, io);
 }
 
 module.exports = (io, db) => {
@@ -487,7 +488,7 @@ module.exports = (io, db) => {
         });
 
         // Evento para pedir una carta (Hit)
-        socket.on('playerHit', () => {
+        socket.on('playerHit', async () => {
             const roomCode = socket.roomCode;
             const room = rooms[roomCode];
             if (!room || room.gameState !== GAME_STATES.PLAYING) return;
@@ -515,9 +516,10 @@ module.exports = (io, db) => {
                 hand: currentPlayer.hand // Enviar toda la mano para sincronizar
             });
 
-            // Si el jugador se pasa de 21
+            // Si el jugador se pasa de 31
             if (handValue > 31) {
                 console.log(`[BUST] Jugador ${currentPlayer.name} se ha pasado con ${handValue}.`);
+                await delay(1000); // Esperar a que termine la animación
                 io.to(roomCode).emit('playerBust', {
                     playerId: socket.id,
                     playerName: currentPlayer.name,
@@ -540,7 +542,21 @@ module.exports = (io, db) => {
                 return socket.emit('error', { message: 'No es tu turno.' });
             }
 
-            console.log(`[STAND] Jugador ${currentPlayer.name} se planta.`);
+            const handValue = calculateHandValue(currentPlayer.hand);
+            if (handValue > 31) {
+                console.log(`[BUST] Jugador ${currentPlayer.name} se ha pasado con ${handValue} al plantarse.`);
+                io.to(roomCode).emit('playerBust', {
+                    playerId: socket.id,
+                    playerName: currentPlayer.name,
+                    score: handValue
+                });
+            } else {
+                console.log(`[STAND] Jugador ${currentPlayer.name} se planta.`);
+                io.to(roomCode).emit('playerStood', {
+                    playerId: socket.id,
+                    playerName: currentPlayer.name
+                });
+            }
             advanceTurn(roomCode, io);
         });
 
@@ -553,10 +569,6 @@ module.exports = (io, db) => {
             // Idealmente, verificar que el emisor es el dealer.
             // En este diseño, solo la vista del dealer tiene el botón, así que es implícito.
             
-            console.log(`[DEALER ACTION] El dealer revela su carta en la sala ${roomCode}`);
-
-            // Iniciar la secuencia de juego del dealer y la determinación de ganadores.
-            playDealerAndDetermineWinners(roomCode, io);
         });
 
         // Evento para reiniciar el juego a la fase de apuestas (solo dealer)

@@ -105,11 +105,10 @@
     <!-- ÁREA DE APUESTAS -->
     <div class="betting-area" id="bettingArea" style="display: none;">
         <div class="betting-modal-content">
-            <div class="balance-info">
-                <div>Balance</div>
-                <div id="balance">$100</div>
+            <div class="betting-info-header">
+                <div class="balance-info">Balance<br><span id="balance">$100</span></div>
+                <div>Total Bet<br><span id="totalBet">$0</span></div>
             </div>
-            <div>Total Bet<br><span id="totalBet">$0</span></div>
             <div class="chips">
                 <div class="chip chip-10" onclick="placeBet(10)">$10</div>
                 <div class="chip chip-25" onclick="placeBet(25)">$25</div>
@@ -118,7 +117,6 @@
             </div>
             <div class="betting-buttons">
                 <button onclick="clearBet()">CLEAR</button>
-                <button onclick="maxBet()">MAX</button> 
                 <button id="confirmBetBtn" onclick="confirmBet()">CONFIRM BET</button>
             </div>
         </div>
@@ -128,16 +126,24 @@
     <div class="player-actions" id="playerActions" style="display: none;">
         <button id="hitBtn" class="action-btn hit">Pedir</button>
         <button id="standBtn" class="action-btn stand">Plantarse</button>
-        <button id="doubleBtn" class="action-btn double">Doblar</button>
-        <button id="splitBtn" class="action-btn split" disabled>Dividir</button>
+    </div>
+
+    <!-- Modal de Fin de Ronda -->
+    <div id="endRoundModal" class="end-round-modal" style="display: none;">
+        <div class="end-round-modal-content">
+            <span class="close-button" onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
+            <h2 id="endRoundModalTitle">Ronda Finalizada</h2>
+            <div id="endRoundModalBody">
+                <p>Esperando que el dealer inicie la siguiente ronda.</p>
+            </div>
+        </div>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/sidebar.js"></script>
     <script>
         // Variables globales
         window.socket = io();
-        let currentBalance = 100; // Valor inicial, se sincronizará con el servidor
+        let currentBalance = 100; 
         let currentBet = 0;
         let betConfirmed = false;
         let gameState = 'waiting';
@@ -224,15 +230,6 @@
                 updateBettingControls();
             });
 
-            // Período de apuestas iniciado
-            window.socket.on('bettingStarted', (data) => {
-                console.log('Período de apuestas iniciado:', data.duration + 'ms');
-                bettingArea.style.display = 'flex';
-                
-                // Opcional: mostrar countdown
-                showBettingTimer(data.duration);
-            });
-
             // Apuestas cerradas
             window.socket.on('bettingClosed', () => {
                 console.log('Período de apuestas cerrado');
@@ -284,6 +281,13 @@
                 const turnDisplay = document.getElementById('turnDisplay');
                 // Limpiar overlays de resultados
                 document.querySelectorAll('.result-overlay').forEach(o => o.remove());
+                // Limpiar clases de resultado de las cartas
+                document.querySelectorAll('.card-lost').forEach(c => {
+                    c.classList.remove('card-lost');
+                });
+                // Limpiar bordes de estado (bust/stand)
+                document.querySelectorAll('.busted-card').forEach(c => c.classList.remove('busted-card'));
+                document.querySelectorAll('.stood-card').forEach(c => c.classList.remove('stood-card'));
                 document.querySelectorAll('.busted').forEach(b => b.classList.remove('busted'));
                 const dealerScore = document.querySelector('.dealer-score-display');
                 if (dealerScore) dealerScore.remove();
@@ -334,11 +338,39 @@
                 showNotification(`${data.playerName} se pasó con ${data.score}!`, 'error');
                 const playerDiv = document.querySelector(`.player-position[data-player-id="${data.playerId}"]`);
                 if (playerDiv) {
-                    playerDiv.classList.add('busted');
+                    const cardsInHand = playerDiv.querySelectorAll('.player-cards-hand .card');
+                    cardsInHand.forEach(card => {
+                        card.classList.add('busted-card');
+                    });
+                    // Actualizar el display de información del jugador
+                    const infoDisplay = playerDiv.querySelector('.player-info-display');
+                    if (infoDisplay) {
+                        infoDisplay.innerHTML = `<strong>${data.playerName}</strong> se pasó de 31`;
+                        infoDisplay.classList.add('status-bust');
+                    }
                 }
                 // Si soy yo quien se ha pasado, oculto mis botones de acción.
                 if (data.playerId === window.socket.id) {
                     document.getElementById('playerActions').style.display = 'none';
+                }
+            });
+
+            // Un jugador se planta
+            window.socket.on('playerStood', (data) => {
+                console.log(`[STAND] ${data.playerName}   se ha plantado.`);
+                const playerDiv = document.querySelector(`.player-position[data-player-id="${data.playerId}"]`);
+                if (playerDiv) {
+                    // Añadir un borde de color a las cartas para indicar que se ha plantado
+                    const cardsInHand = playerDiv.querySelectorAll('.player-cards-hand .card');
+                    cardsInHand.forEach(card => {
+                        card.classList.add('stood-card'); // La clase correcta es 'stood-card'
+                    });
+
+                    const infoDisplay = playerDiv.querySelector('.player-info-display');
+                    if (infoDisplay) {
+                        infoDisplay.innerHTML = `<strong>${data.playerName}</strong> se plantó`;
+                        infoDisplay.classList.add('status-stand');
+                    }
                 }
             });
 
@@ -400,16 +432,18 @@
                 data.results.forEach(result => {
                     const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
                     if (playerDiv) {
-                        // Crear un div para el resultado
-                        const resultOverlay = document.createElement('div');
-                        resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
-                        
-                        resultOverlay.innerHTML = `
-                            <div class="outcome-text">${result.outcome}</div>
-                            <div class="score-text">Puntos: ${result.playerScore}</div>
-                        `;
-                        
-                        playerDiv.appendChild(resultOverlay);
+                        // No mostrar el overlay de resultado si el jugador pierde.
+                        if (result.outcome !== 'LOSE') {
+                            const resultOverlay = document.createElement('div');
+                            resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
+                            
+                            resultOverlay.innerHTML = `
+                                <div class="outcome-text">${result.outcome}</div>
+                                <div class="score-text">Puntos: ${result.playerScore}</div>
+                            `;
+                            
+                            playerDiv.appendChild(resultOverlay);
+                        }
 
                         // Actualizar nuestro propio balance
                         if (result.playerId === window.socket.id) {
@@ -435,6 +469,49 @@
                 }
                 dealerScoreDisplay.textContent = dealerText;
                 dealerHandContainer.appendChild(dealerScoreDisplay);
+
+                // Abrir el modal de fin de ronda después de 3 segundos
+                 setTimeout(() => {
+                    const modal = document.getElementById('endRoundModal');
+                    const modalBody = document.getElementById('endRoundModalBody');
+                    
+                    // 1. Ordenar los resultados
+                    const sortedResults = [...data.results].sort((a, b) => {
+                        const scoreA = a.playerScore;
+                        const scoreB = b.playerScore;
+                        const aBusted = scoreA > 31;
+                        const bBusted = scoreB > 31;
+
+                        if (aBusted && !bBusted) return 1; // 'a' se pasó, va después
+                        if (!aBusted && bBusted) return -1; // 'b' se pasó, va después
+                        if (aBusted && bBusted) return scoreA - scoreB; // Ambos se pasaron, el que menos se pasó va primero
+                        return scoreB - scoreA; // Ninguno se pasó, el más alto va primero
+                    });
+
+                    // 2. Crear el HTML para la lista de puntuaciones
+                    let resultsHtml = `
+                        <div class="results-list">
+                            <div class="results-header">
+                                <span>Jugador</span>
+                                <span>Puntuación</span>
+                            </div>
+                    `;
+                    sortedResults.forEach(result => {
+                        resultsHtml += `
+                            <div class="results-row">
+                                <span>${result.playerName}</span>
+                                <span>${result.playerScore > 31 ? `Se pasó (${result.playerScore})` : result.playerScore}</span>
+                            </div>
+                        `;
+                    });
+                    resultsHtml += '</div><p class="waiting-next-round">Esperando que el dealer inicie la siguiente ronda...</p>';
+
+                    // 3. Actualizar el contenido del modal y mostrarlo
+                    if (modal && modalBody) {
+                        modalBody.innerHTML = resultsHtml;
+                        modal.style.display = 'flex';
+                    }
+                }, 4000); // Aumentado a 4s para dar tiempo a ver los resultados en mesa
             });
         });
 
@@ -477,13 +554,10 @@
                 playerDiv.dataset.playerId = player.id; // <-- IMPORTANTE para la animación
 
                 let betDisplay = '';
-                let floatingBetHtml = '';
                 let betStatusClass = '';
 
                 if (player.betConfirmed && player.bet > 0) {
                     // Apuesta confirmada
-                    floatingBetHtml = ``; // Ya no se necesita el globo flotante
-                    // Mostrar el monto de la apuesta en lugar del ícono
                     betDisplay = `<div class="bet-confirmed-icon">$${player.bet}</div>`;
                     betStatusClass = 'bet-confirmed';
                 } else if (player.bet > 0) {
@@ -497,16 +571,9 @@
                 }
 
                 playerDiv.innerHTML = `
-                    <div class="player-header">
-                        <div class="player-name-display ${player.name === currentPlayerName ? 'current-player' : ''}">${player.name}</div>
-                        ${floatingBetHtml}
-                    </div>
-                    <div class="player-cards-hand">
-                        <div class="card-slot">
-                            Esperando cartas...
-                        </div>
-                    </div>
-                    <div class="player-bet ${betStatusClass}">${betDisplay}</div>`;
+                    <div class="player-info-display">${player.name}</div>
+                    <div class="player-bet ${betStatusClass}">${betDisplay}</div>
+                    <div class="player-cards-hand"></div>`;
                 
                 playerCardsContainer.appendChild(playerDiv);
             });
@@ -520,20 +587,14 @@
                 const style = document.createElement('style');
                 style.id = 'player-bet-styles';
                 style.innerHTML = `
-                    .player-header {
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
+                    .player-info-display {
                         color: white;
                         font-weight: bold;
-                        margin-bottom: 5px;
+                        margin-bottom: 8px;
+                        text-align: center;
+                        height: 2.5em; /* Altura fija para evitar saltos de layout */
                     }
-                    
-                    .current-player {
-                        color: #FFD700 !important;
-                        text-shadow: 0 0 10px #FFD700;
-                    }
-                    
+
                     .player-position {
                         position: relative;
                         overflow: visible;
@@ -543,115 +604,83 @@
                         border: 2px solid transparent;
                         transition: all 0.3s ease;
                     }
-                    
-                    .confirmed-bet-floater {
-                        position: absolute;
-                        top: -10px;
-                        right: -10px;
-                        background-color: #27ae60;
-                        color: white;
-                        font-weight: bold;
-                        padding: 4px 8px;
-                        border-radius: 15px;
-                        border: 2px solid white;
-                        box-shadow: 0 0 10px rgba(39, 174, 96, 0.7);
-                        z-index: 10;
-                        animation: pulse 2s infinite;
+                    .player-info-display.status-bust {
+                        color: #e74c3c;
                     }
-                    
-                    .player-position.current-turn {
-                        /* El borde y el resplandor del contenedor se han eliminado */
+                    .player-info-display.status-stand {
+                        color: #3498db;
                     }
 
-                    /* Se añade un borde y resplandor a la primera y última carta del jugador activo */
-                    .player-position.current-turn .player-cards-hand .card:first-child,
-                    .player-position.current-turn .player-cards-hand .card:last-child {
-                        border: 2px solid #4eb8ff;
-                        box-shadow: 0 0 10px rgba(78, 184, 255, 0.8);
+                    /* --- JERARQUÍA DE ESTILOS DE BORDE --- */
+                    
+                    /* 1. Turno Actual (Prioridad Baja) */
+                    .player-position.current-turn .card {
+                        border: 3px solid #4eb8ff !important;
+                        box-shadow: 0 0 12px rgba(78, 184, 255, 0.8) !important;
+                    }
+
+                    /* 2. Plantado (Prioridad Media) - Sobrescribe al turno actual */
+                    .player-position .card.stood-card {
+                        border: 3px solid #3498db !important;
+                        box-shadow: 0 0 10px rgba(52, 152, 219, 0.7) !important;
+                    }
+
+                    /* 3. Pasado (Prioridad Máxima) - Sobrescribe a todos los demás */
+                    .player-position .card.busted-card {
+                        border: 3px solid #e74c3c !important;
+                        box-shadow: 0 0 12px rgba(231, 76, 60, 0.8) !important;
                     }
 
                     /* --- ESTILOS PARA EL TURNO ACTUAL COMBINADOS CON LA CURVA --- */
 
-                    /* Vista para Escritorio (por defecto) */
+                    /* Vista para Escritorio: Mantenemos la transformación original y solo añadimos scale(1.05) */
                     .player-position.curve-left.current-turn {
-                        transform: translateX(0) translateY(-25px) rotate(15deg) scale(1.05);
+                        transform: translateX(-50px) translateY(-25px) rotate(15deg) scale(1.05);
                     }
                     .player-position.curve-center.current-turn {
                         transform: translateY(0px) rotate(0deg) scale(1.05);
                     }
                     .player-position.curve-right.current-turn {
-                        transform: translateX(0) translateY(-25px) rotate(-15deg) scale(1.05);
+                        transform: translateX(50px) translateY(-25px) rotate(-15deg) scale(1.05);
                     }
 
-                    /* Sobreescritura para pantallas pequeñas (móviles) */
+                    /* Sobreescritura para móviles: Mantenemos la transformación original y solo añadimos scale(1.05) */
                     @media (max-width: 720px) {
                         .player-position.curve-left.current-turn {
-                            transform: translateY(-60px) translateX(60%) rotate(10deg) scale(1.05);
+                            transform: translateY(-40px) translateX(30%) rotate(10deg) scale(1.05);
                         }
                         .player-position.curve-right.current-turn {
-                            transform: translateY(-60px) translateX(-60%) rotate(-10deg) scale(1.05);
+                            transform: translateY(-40px) translateX(-30%) rotate(-10deg) scale(1.05);
                         }
                         .player-position.curve-center.current-turn {
-                            transform: translateY(100px) scale(1.05);
+                            transform: translateY(90px) scale(1.05);
                         }
                     }
 
-                    .turn-display-message {
-                        position: absolute;
-                        bottom: 220px; /* Posición sobre los botones de acción y cartas */
-                        left: 50%;
-                        transform: translateX(-50%);
-                        width: 90%;
-                        max-width: 450px;
-                        text-align: center;
-                        padding: 10px 20px;
-                        background: rgba(0, 0, 0, 0.4);
-                        border-radius: 8px;
-                        font-size: 1.2em;
-                        color: #fff;
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        transition: all 0.3s;
-                        z-index: 5;
+                    /* Estilos para la lista de resultados en el modal */
+                    .results-list { width: 100%; margin-bottom: 20px; }
+                    .results-header, .results-row {
+                        display: flex;
+                        justify-content: space-between;
+                        padding: 10px 15px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                     }
-
-                    .turn-display-message.my-turn {
-                        background: #D4AF37;
-                        color: #000;
+                    .results-header {
                         font-weight: bold;
-                        border-color: #fff;
+                        color: #D4AF37;
+                        background: rgba(255, 255, 255, 0.05);
+                        border-top-left-radius: 8px;
+                        border-top-right-radius: 8px;
+                    }
+                    .results-row span:last-child {
+                        font-weight: bold;
+                    }
+                    .waiting-next-round {
+                        margin-top: 15px;
+                        color: #ccc;
                         box-shadow: 0 0 15px #D4AF37;
                     }
 
-                    .player-position.busted {
-                        background: rgba(192, 57, 43, 0.4);
-                        border-color: #e74c3c;
-                        opacity: 0.8;
-                        filter: grayscale(50%);
-                    }
-
-                    .player-position.busted::after {
-                        content: 'BUST';
-                        position: absolute;
-                        top: 50%;
-                        left: 50%;
-                        transform: translate(-50%, -50%) rotate(-15deg);
-                        font-size: 3em;
-                        font-weight: bold;
-                        color: rgba(255, 255, 255, 0.7);
-                        text-shadow: 2px 2px 5px #000;
-                        z-index: 20;
-                        pointer-events: none;
-                    }
-
-                    .card-slot {
-                        border: 2px dashed rgba(255, 255, 255, 0.3);
-                        border-radius: 10px;
-                        padding: 20px 10px;
-                        text-align: center;
-                        color: rgba(255, 255, 255, 0.5);
-                        margin: 10px 0;
-                    }
-                    
                     .bet-confirmed-icon {
                         color: #27ae60;
                         font-size: 1.2em;
@@ -669,12 +698,6 @@
                     
                     .no-bet {
                         color: rgba(255, 255, 255, 0.5);
-                        margin-top: 5px;
-                    }
-                    
-                    .player-balance {
-                        font-size: 0.9em;
-                        color: #D4AF37;
                         margin-top: 5px;
                     }
                     
@@ -773,48 +796,53 @@
         }
 
         function highlightCurrentPlayerUI(playerId, playerName) {
-            // Remover highlights previos
+            
+            // 1. Limpiar todos los highlights y mensajes de turno previos
             document.querySelectorAll('.player-position').forEach(div => {
                 div.classList.remove('current-turn');
+                const infoDisplay = div.querySelector('.player-info-display');
+                
+                // Si el texto no es un estado final (plantado/perdido), lo reseteamos al nombre.
+                if (infoDisplay && !infoDisplay.classList.contains('status-stand') && !infoDisplay.classList.contains('status-bust')) {
+                    const originalPlayerId = div.dataset.playerId;
+                    const originalPlayer = playersList.find(p => p.id === originalPlayerId);
+                    if (originalPlayer) {
+                        infoDisplay.innerHTML = originalPlayer.name;
+                    }
+                }
             });
 
-            // Resaltar al jugador actual
-            if (playerId) {
-                const playerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
-                if (playerDiv) {
-                    playerDiv.classList.add('current-turn');
-                }
-            }
-
-            // Mostrar mensaje de turno
-            let turnDisplay = document.getElementById('turnDisplay');
-            if (!turnDisplay) {
-                turnDisplay = document.createElement('div');
-                turnDisplay.id = 'turnDisplay';
-                turnDisplay.className = 'turn-display-message';
-                
-                const playerArea = document.querySelector('.player-area');
-                // Insertar antes del área de jugadores para que esté arriba
-                playerArea.parentNode.insertBefore(turnDisplay, playerArea);
-            }
-            
+            // 2. Determinar si es mi turno y actualizar la UI
             const isMyTurn = window.socket.id === playerId;
             const playerActions = document.getElementById('playerActions');
 
             if (isMyTurn) {
-                // Ocultamos el mensaje cuando es el turno del jugador.
-                turnDisplay.style.display = 'none';
-                turnDisplay.classList.add('my-turn');
+                // Es mi turno: muestro mis botones de acción y resalto mi área.
                 playerActions.style.display = 'flex';
-            } else {
-                playerActions.style.display = 'none';
-                turnDisplay.style.display = 'block'; // Nos aseguramos de que el mensaje sea visible para los otros turnos.
-                if (playerId) { // Otro jugador
-                    turnDisplay.innerHTML = `<span>Turno de <strong>${playerName}</strong>. Espera tu momento.</span>`;
-                } else { // Turno del dealer o estado intermedio
-                    turnDisplay.innerHTML = `<span>Turno del <strong>${playerName || 'Dealer'}</strong>.</span>`;
+                const myPlayerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
+                if (myPlayerDiv) {
+                    myPlayerDiv.classList.add('current-turn');
+                    const infoDisplay = myPlayerDiv.querySelector('.player-info-display');
+                    if (infoDisplay) {
+                        infoDisplay.innerHTML = `Es <strong>tu</strong> turno`;
+                    }
                 }
-                turnDisplay.classList.remove('my-turn');
+            } else {
+                // No es mi turno: oculto mis botones.
+                playerActions.style.display = 'none';
+                
+                if (playerId) { // Es el turno de otro jugador
+                    const playerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
+                    if (playerDiv) {
+                        playerDiv.classList.add('current-turn');
+                        const infoDisplay = playerDiv.querySelector('.player-info-display');
+                        // Solo actualizamos si no tiene ya un estado final
+                        if (infoDisplay && !infoDisplay.classList.contains('status-stand') && !infoDisplay.classList.contains('status-bust')) {
+                            infoDisplay.innerHTML = `Turno de <strong>${playerName}</strong>`;
+                        }
+                    }
+                }
+                // Si playerId es null (turno del dealer), no se muestra ningún mensaje en las áreas de los jugadores.
             }
         }
 
@@ -831,12 +859,9 @@
             // Usar la imagen de la carta como fondo
             cardDiv.className = 'card';
             cardDiv.style.backgroundImage = `url('/${card.src}')`;
-            // Opcional: puedes dejar el texto superpuesto si tu CSS lo permite
-
-    // Estilos para asegurar que la imagen se vea bien
-    cardDiv.style.backgroundSize = 'cover'; // Escala la imagen para cubrir el div
-    cardDiv.style.backgroundPosition = 'center'; // Centra la imagen
-    cardDiv.style.backgroundRepeat = 'no-repeat'; // Evita que la imagen se repita
+            cardDiv.style.backgroundSize = 'cover';
+            cardDiv.style.backgroundPosition = 'center';
+            cardDiv.style.backgroundRepeat = 'no-repeat';
 
             return cardDiv;
         }
@@ -878,7 +903,11 @@
                     targetHandElement = document.getElementById('dealerCards');
                 }
 
-                if (!targetHandElement) return resolve();
+                if (!targetHandElement) {
+                    // Si no se encuentra el contenedor, simplemente resolvemos la promesa para no detener la secuencia.
+                    console.warn(`No se encontró el contenedor de mano para ${deal.target} ${deal.id || ''}`);
+                    return resolve();
+                }
 
                 const cardElement = createCardElement(deal.card);
                 cardElement.classList.add('dealing-animation');
@@ -895,13 +924,31 @@
                 const targetY = targetRect.top + (targetRect.height / 2) - (cardHeight / 2);
 
                 setTimeout(() => {
-                    cardElement.style.transform = `translate(${targetX - deckRect.left}px, ${targetY - deckRect.top}px) rotate(360deg)`;
+                    // Detectar si el jugador está en una posición lateral
+                    let isSidePlayer = false;
+                    if (deal.target === 'player') {
+                        const playerDiv = document.querySelector(`.player-position[data-player-id="${deal.id}"]`);
+                        if (playerDiv && (playerDiv.classList.contains('curve-left') || playerDiv.classList.contains('curve-right'))) {
+                            isSidePlayer = true;
+                        }
+                    }
+
+                    let finalTransform = `translate(${targetX - deckRect.left}px, ${targetY - deckRect.top}px) rotate(360deg)`;
+                    // Si es un jugador lateral, la animación termina con la carta encogiéndose
+                    if (isSidePlayer) {
+                        finalTransform += ' scale(0.1)';
+                    }
+                    cardElement.style.transform = finalTransform;
+
                     cardElement.addEventListener('transitionend', () => {
                         cardElement.remove(); // Eliminar la carta animada
-                        const finalCard = createCardElement(deal.card);
-                        finalCard.style.position = 'absolute'; // Asegurar que la carta final se pueda posicionar
-                        targetHandElement.appendChild(finalCard); // Añadir la carta final estática
-                        applyFanEffect(); // Re-aplicar el abanico para un efecto progresivo
+                        // Solo añadir la carta estática si no es un jugador lateral
+                        if (!isSidePlayer) {
+                            const finalCard = createCardElement(deal.card);
+                            finalCard.style.position = 'absolute';
+                            targetHandElement.appendChild(finalCard);
+                            applyFanEffect(); // Re-aplicar el abanico para un efecto progresivo
+                        }
                         resolve();
                     }, { once: true });
                 }, 50);
@@ -944,29 +991,11 @@
         }
 
         function updateBettingControls() {
-            if (betConfirmed || gameState === 'playing' || gameState === 'finished') {
-                disableAllBettingControls();
+            if (betConfirmed || gameState !== 'betting') {
+                bettingArea.classList.add('betting-controls-disabled');
             } else {
-                enableBettingControls();
+                bettingArea.classList.remove('betting-controls-disabled');
             }
-        }
-
-        function enableBettingControls() {
-            bettingArea.classList.remove('betting-controls-disabled');
-            document.querySelectorAll('.chips .chip, .betting-area button').forEach(el => {
-                el.style.pointerEvents = 'auto';
-                el.style.opacity = '1';
-                if (el.tagName === 'BUTTON') el.disabled = false;
-            });
-        }
-
-        function disableAllBettingControls() {
-            bettingArea.classList.add('betting-controls-disabled');
-            document.querySelectorAll('.chips .chip, .betting-area button').forEach(el => {
-                el.style.pointerEvents = 'none';
-                el.style.opacity = '0.4';
-                if (el.tagName === 'BUTTON') el.disabled = true;
-            });
         }
 
         function placeBet(amount) {
@@ -990,13 +1019,6 @@
             if (betConfirmed) return;
             // Usar el evento específico del servidor para cancelar la apuesta.
             window.socket.emit('cancelBet');
-        }
-
-        function maxBet() {
-            if (betConfirmed) return;
-            currentBet = currentBalance; // Todo el saldo disponible
-            updateBetDisplay();
-            window.socket.emit('playerBet', { bet: currentBet });
         }
 
         function confirmBet() {
@@ -1029,11 +1051,6 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
-        }
-
-        function showBettingTimer(duration) {
-            // Opcional: implementar countdown visual
-            console.log(`Tiempo restante para apostar: ${duration/1000} segundos`);
         }
 
         async function exitRoom() {

@@ -179,7 +179,8 @@ text {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 15px;
+    gap: 10px;
+    width: 150px; /* Ancho fijo para evitar que el cambio de texto mueva al jugador */
 }
 
 /* =========================
@@ -315,11 +316,8 @@ text {
     display: flex;
     align-items: center;
     gap: 8px;
-
-    padding: 8px 12px;
+    padding: 0 12px 8px 12px; /* Eliminamos el padding superior */
     border-radius: 8px;
-
-
 }
 
 .player-chip {
@@ -344,7 +342,7 @@ text {
            EFECTOS DE CURVA PARA CARTAS
            ========================= */
 .curve-left {
-    transform: translateX(0) translateY(-25px) rotate(15deg);
+    transform: translateX(-50px) translateY(-25px) rotate(15deg); /* Mueve el jugador izquierdo más a la izquierda */
 }
 
 .curve-center {
@@ -352,7 +350,7 @@ text {
 }
 
 .curve-right {
-    transform: translateX(0) translateY(-25px) rotate(-15deg);
+    transform: translateX(50px) translateY(-25px) rotate(-15deg); /* Mueve el jugador derecho más a la derecha */
 }
 
 /* =========================
@@ -406,11 +404,12 @@ text {
     color: black;
 }
 
-.balance-info {
+.betting-info-header {
     display: flex;
-    flex-direction: column;
+    justify-content: space-around;
+    width: 100%;
     align-items: center;
-    gap: 5px;
+    font-size: 1.1em;
 }
 
 /* =========================
@@ -583,26 +582,93 @@ text {
 }
 
 @media (max-width: 1220px) {
-    .player-cards {
-        gap: 100px;
-        /* menos separación */
+      .player-cards {
+        gap: 0;
+        /* menos separación entre jugadores */
+    }
+
+    .player-actions {
+        width: 100%;
+        bottom: 0;
+        left: 0;
+        transform: none;
+        border-radius: 20px 20px 0 0;
+        padding: 10px;
+        gap: 8px;
+        justify-content: center;
+        flex-wrap: wrap; /* Permite que los botones bajen si no caben */
+    }
+
+    .action-btn {
+        padding: 10px 15px;
+        font-size: 0.8em;
+        min-width: 90px; /* Ancho mínimo más pequeño */
     }
 
     .player-area {
         order: 2;
-        margin-top: -70px;
+        margin-top: -0px;
+
     }
 
     .dealer-area {
         text-align: center;
         order: 1;
         margin-bottom: 0;
+        margin-top: 105px;
+        gap: 30px; /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
+
+    .online-status {
+        display: flex; /* Se muestra en pantallas pequeñas */
+    }
+
+    .dealer-hand {
+        min-height: 105px; /* 10% menos de 120px */
+    }
+
+    /* Reducción del 10% para cartas y pila */
+    .card, .deck-pile, .card-slot {
+        width: 72px;
+        height: 105px;
+    }
+
+    .svg-container {
+        margin-top: -20px; /* Sube el texto decorativo */
+    }
+
+    /* Sube más a los jugadores de los lados en pantallas medianas */
+    .curve-left {
+        transform: translateY(-40px) translateX(50%) rotate(10deg);
+    }
+
+    .curve-right {
+        transform: translateY(-40px) translateX(-50%) rotate(-10deg);
+    }
+    .curve-center {
+    transform: translateY(90px); /* siempre más abajo */
+    }
+}
+
+/* Tablets grandes y laptops chicas */
+@media (max-width: 992px) {
+        .curve-left {
+        transform: translateY(-90px) translateX(-40%) rotate(10deg);
+    }
+
+    .curve-right {
+        transform: translateY(-90px) translateX(40%) rotate(-10deg);
+    }
+    .curve-center {
+    transform: translateY(90px); /* siempre más abajo */
+    }
+
 }
 
 
 
-@media (max-width: 720px) {
+
+@media (max-width: 700px) {
     .player-cards {
         gap: 0;
         /* menos separación entre jugadores */
@@ -628,7 +694,7 @@ text {
 
     .player-area {
         order: 2;
-        margin-top: -50px;
+        margin-top: -0px;
 
     }
 
@@ -637,8 +703,7 @@ text {
         order: 1;
         margin-bottom: 0;
         margin-top: -85px;
-        gap: 35px; /* 10% menos de 50px */
-        min-height: 120px; /* 10% menos de 150px */
+        gap: 30px; /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
 
     .online-status {
@@ -656,27 +721,28 @@ text {
     }
 
     .svg-container {
-        margin-top: -40px; /* Sube el texto decorativo */
+        margin-top: -20px; /* Sube el texto decorativo */
     }
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-60px) translateX(60%) rotate(10deg);
+        transform: translateY(-40px) translateX(50%) rotate(10deg);
     }
 
     .curve-right {
-        transform: translateY(-60px) translateX(-60%) rotate(-10deg);
+        transform: translateY(-40px) translateX(-50%) rotate(-10deg);
     }
     .curve-center {
-    transform: translateY(100px); /* siempre más abajo */
+    transform: translateY(90px); /* siempre más abajo */
     }
 }
 
 
-@media (max-width: 568px) {
-        .player-cards {
-        gap:-70px;
-        /* menos separación entre jugadores */
+@media (max-width: 567px) {
+    .player-cards {
+        gap: 20px; /* Reducir la separación para que estén más juntos */
+        margin-top: 10px;
+        margin-bottom: 10px;
     }
 
     .top-bar {
@@ -692,6 +758,7 @@ text {
     .player-position {
         padding: 8px;
         margin: 5px;
+        min-width: 140px; /* Asegurar un ancho mínimo para que el texto no se comprima */
         gap: 8px; /* Reducir espacio interno */
     }
 
@@ -708,11 +775,6 @@ text {
     /* Reducir el tamaño de la fuente en la información del jugador */
     .player-name-display, .player-balance, .player-bet {
         font-size: 0.85em;
-    }
-
-    .player-cards {
-        gap: 60px;
-        /* menos separación entre jugadores */
     }
 
     .player-area {
@@ -736,4 +798,47 @@ text {
 .player-cards-hand {
     position: relative;
     height: 120px; /* Fijar altura para evitar saltos de layout */
+}
+
+/* =========================
+           MODAL FIN DE RONDA
+           ========================= */
+.end-round-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500; /* Asegura que esté por encima de otros elementos */
+}
+
+.end-round-modal-content {
+    background: rgba(10, 10, 10, 0.95);
+    padding: 40px;
+    border-radius: 15px;
+    border: 2px solid #D4AF37;
+    min-width: 400px;
+    min-height: 300px;
+    box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+    position: relative;
+}
+
+.close-button {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: white;
+    text-decoration: none;
+    cursor: pointer;
 }

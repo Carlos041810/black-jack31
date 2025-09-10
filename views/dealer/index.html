@@ -302,6 +302,10 @@ function setupSocketEvents() {
         showNotification(`${data.playerName} se pasó con ${data.score}!`, 'error');
         const playerDiv = document.querySelector(`.player-position[data-player-id="${data.playerId}"]`);
         if (playerDiv) {
+            const cardsInHand = playerDiv.querySelectorAll('.player-cards-hand .card');
+            cardsInHand.forEach(card => {
+                card.classList.add('busted-card');
+            });
             playerDiv.classList.add('busted');
         }
     });
@@ -518,6 +522,11 @@ function addPlayerStyles() {
             color: rgba(255, 255, 255, 0.7);
             text-shadow: 2px 2px 5px #000;
             pointer-events: none;
+        }
+        .player-cards-hand .busted-card {
+            border-color: #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
+            opacity: 0.8;
         }`;
     document.head.appendChild(style);
 }
