@@ -754,7 +754,7 @@ text {
 
 @media (max-width: 567px) {
     .player-cards {
-        gap: 20px; /* Reducir la separación para que estén más juntos */
+        gap: 5px; /* Reducir la separación para que estén más juntos */
         margin-top: 10px;
         margin-bottom: 10px;
     }
