@@ -168,7 +168,7 @@ text {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 200px;
+    gap: 150px; /* Reducido para evitar overflow en pantallas medianas */
     margin-top: 20px;
     min-height: 120px;
     margin-bottom: 20px;
@@ -180,7 +180,7 @@ text {
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    width: 150px; /* Ancho fijo para evitar que el cambio de texto mueva al jugador */
+    min-width: 170px; /* Ancho mínimo para evitar que los elementos se muevan al cambiar el texto */
 }
 
 /* =========================
@@ -532,17 +532,14 @@ text {
            ========================= */
 .player-actions {
     position: fixed;
-    bottom: 20px;
+    bottom: 50px; /* Subido para mayor visibilidad */
     left: 50%;
     transform: translateX(-50%);
     display: flex;
     gap: 15px;
-    background: rgba(0, 0, 0, 0.7);
     padding: 15px;
     border-radius: 20px;
-    border: 2px solid #D4AF37;
     z-index: 100;
-    box-shadow: 0 -5px 20px rgba(0,0,0,0.4);
     transition: all 0.3s ease;
 }
 
@@ -583,13 +580,13 @@ text {
 
 @media (max-width: 1220px) {
       .player-cards {
-        gap: 0;
+        gap: 20px;
         /* menos separación entre jugadores */
     }
 
     .player-actions {
-        width: 100%;
-        bottom: 0;
+        width: 90%;
+        bottom: 15px; /* Subido ligeramente del borde */
         left: 0;
         transform: none;
         border-radius: 20px 20px 0 0;
@@ -653,7 +650,7 @@ text {
 /* Tablets grandes y laptops chicas */
 @media (max-width: 992px) {
         .curve-left {
-        transform: translateY(-90px) translateX(-40%) rotate(10deg);
+        transform: translateY(-90px) translateX(-70px) rotate(10deg);
     }
 
     .curve-right {
@@ -662,6 +659,10 @@ text {
     .curve-center {
     transform: translateY(90px); /* siempre más abajo */
     }
+    .player-cards {
+        gap: 10px; /* Reducir aún más el gap */
+    }
+
 
 }
 
@@ -669,14 +670,27 @@ text {
 
 
 @media (max-width: 700px) {
+        .end-round-modal-content {
+        min-width: 0;
+        width: 90vw; /* Ocupa el 90% del ancho de la pantalla */
+        padding: 25px 15px; /* Reduce el padding */
+        min-height: auto; /* Permite que la altura se ajuste al contenido */
+    }
+
+    .betting-modal-content {
+        width: 90vw; /* Limita el ancho al 90% de la pantalla */
+        padding: 20px 15px; /* Reduce el padding lateral */
+        margin: 0 auto; /* Asegura el centrado horizontal */
+    }
+
     .player-cards {
-        gap: 0;
+        gap: 10px;
         /* menos separación entre jugadores */
     }
 
     .player-actions {
         width: 100%;
-        bottom: 0;
+        bottom: 80px; /* Subido ligeramente del borde */
         left: 0;
         transform: none;
         border-radius: 20px 20px 0 0;
@@ -702,7 +716,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -85px;
+        margin-top: -165px;
         gap: 30px; /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
 
@@ -721,16 +735,16 @@ text {
     }
 
     .svg-container {
-        margin-top: -20px; /* Sube el texto decorativo */
+        margin-top: -40px; /* Sube el texto decorativo */
     }
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-40px) translateX(50%) rotate(10deg);
+        transform: translateY(-40px) translateX(50%);
     }
 
     .curve-right {
-        transform: translateY(-40px) translateX(-50%) rotate(-10deg);
+        transform: translateY(-40px) translateX(-50%);
     }
     .curve-center {
     transform: translateY(90px); /* siempre más abajo */
@@ -791,13 +805,7 @@ text {
 
     .game-area {
         margin-top: -20px;
-
     }
-
-}
-.player-cards-hand {
-    position: relative;
-    height: 120px; /* Fijar altura para evitar saltos de layout */
 }
 
 /* =========================
@@ -841,4 +849,32 @@ text {
     color: white;
     text-decoration: none;
     cursor: pointer;
+}
+
+/* Ajuste para el modal de puntuación en móviles pequeños */
+@media (max-width: 480px) {
+    .end-round-modal-content {
+        min-width: 0;
+        width: 90vw; /* Ocupa el 90% del ancho de la pantalla */
+        padding: 25px 15px; /* Reduce el padding */
+        min-height: auto; /* Permite que la altura se ajuste al contenido */
+    }
+
+    .player-cards-hand {
+        position: relative;
+        height: 120px; /* Fijar altura para evitar saltos de layout */
+    }
+
+
+
+    .betting-modal-content {
+        width: 90vw; /* Limita el ancho al 90% de la pantalla */
+        padding: 20px 15px; /* Reduce el padding lateral */
+        margin: 0 auto; /* Asegura el centrado horizontal */
+    }
+
+    .chips {
+        flex-wrap: wrap; /* Permite que las fichas bajen a la siguiente línea */
+        justify-content: center; /* Mantiene las fichas centradas */
+    }
 }

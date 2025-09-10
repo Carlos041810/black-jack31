@@ -407,6 +407,8 @@ function setupSocketEvents() {
             dealerText += ' (BLACKJACK)';
         }
         dealerScoreDisplay.textContent = dealerText;
+
+        // Insertar el display de puntuación al principio del contenedor
         dealerHandContainer.appendChild(dealerScoreDisplay);
     });
 
@@ -568,17 +570,19 @@ function addResultStyles() {
         .result-overlay.result-lose { background: rgba(192, 57, 43, 0.7); }
         .result-overlay.result-push { background: rgba(44, 62, 80, 0.7); }
         .dealer-score-display {
-            position: absolute;
-            bottom: -30px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0,0,0,0.7);
-            color: #FFD700;
-            padding: 5px 15px;
-            border-radius: 10px;
+            position: absolute; /* Posición relativa al contenedor de la mano */
+            bottom: -40px;      /* Lo posicionamos 40px por debajo del contenedor */
+            left: 50%;          /* Centrado horizontalmente */
+            transform: translateX(-50%); /* Ajuste fino del centrado */
+            background: rgba(0, 0, 0, 0.75);
+            color: #FFD700;     /* Color dorado para que destaque */
+            padding: 8px 18px;
+            border-radius: 12px;
             font-weight: bold;
-            white-space: nowrap;
-        }`;
+            white-space: nowrap; /* Evita que el texto se parta en dos líneas */
+            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
+        }
+    `;
     document.head.appendChild(style);
 }
 
