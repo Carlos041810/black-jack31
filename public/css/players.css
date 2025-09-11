@@ -808,6 +808,7 @@ text {
     }
 }
 
+
 /* =========================
            MODAL FIN DE RONDA
            ========================= */
@@ -862,6 +863,7 @@ text {
 /* Ajuste para el modal de puntuación en móviles pequeños */
 @media (max-width: 480px) {
 .end-round-modal-content {
+        left: 5% !important; /* Asegura que el modal esté dentro de la pantalla */
         min-width: 0 !important;
         width: 90vw !important;
         padding: 25px 15px !important;
