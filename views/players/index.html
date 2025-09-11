@@ -576,11 +576,11 @@
 
                 if (player.betConfirmed && player.bet > 0) {
                     // Apuesta confirmada
-                    betDisplay = `<div class="bet-confirmed-icon">$${player.bet}</div>`;
+                    betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
                     betStatusClass = 'bet-confirmed';
                 } else if (player.bet > 0) {
                     // Apuesta pendiente
-                    betDisplay = `<div class="bet-pending">$${player.bet} (Pendiente)</div>`;
+                    betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
                     betStatusClass = 'bet-pending';
                 } else {
                     // Sin apuesta
@@ -589,9 +589,11 @@
                 }
 
                 playerDiv.innerHTML = `
-                    <div class="player-info-display">${player.name}</div>
-                    <div class="player-bet ${betStatusClass}">${betDisplay}</div>
-                    <div class="player-cards-hand"></div>`;
+                    <div class="player-content">
+                        <div class="player-info-display">${player.name}</div>
+                        <div class="player-bet ${betStatusClass}">${betDisplay}</div>
+                        <div class="player-cards-hand"></div>
+                    </div>`;
                 
                 playerCardsContainer.appendChild(playerDiv);
             });
@@ -609,7 +611,9 @@
                         color: white;
                         font-weight: bold;
                         margin-bottom: 8px;
-                        text-align: center;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
                         height: 2.5em; /* Altura fija para evitar saltos de layout */
                         width: 150px; /* Ancho fijo para evitar que el texto cambie el tamaño */
                     }
@@ -622,6 +626,16 @@
                         border-radius: 10px;
                         border: 2px solid transparent;
                         transition: all 0.3s ease;
+                    }
+                    .player-content {
+                        transition: transform 0.3s ease;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .player-position.current-turn .player-content {
+                        transform: scale(1.05);
                     }
                     .player-info-display.status-bust {
                         color: #e74c3c;
@@ -661,30 +675,6 @@
                     .dealer-hand .card.card-lose-border {
                         border: 4px solid #e74c3c !important;
                         box-shadow: 0 0 15px rgba(231, 76, 60, 0.9) !important;
-                    }
-
-
-                    .player-position.curve-left.current-turn {
-                        transform: translateX(-50px) translateY(-25px) rotate(15deg) scale(1.05);
-                    }
-                    .player-position.curve-center.current-turn {
-                        transform: translateY(0px) rotate(0deg) scale(1.05);
-                    }
-                    .player-position.curve-right.current-turn {
-                        transform: translateX(50px) translateY(-25px) rotate(-15deg) scale(1.05);
-                    }
-
-                    /* Sobreescritura para móviles: Mantenemos la transformación original y solo añadimos scale(1.05) */
-                    @media (max-width: 720px) {
-                        .player-position.curve-left.current-turn {
-                            transform: translateY(-40px) translateX(50%) scale(1.05);
-                        }
-                        .player-position.curve-right.current-turn {
-                            transform: translateY(-40px) translateX(-50%) scale(1.05);
-                        }
-                        .player-position.curve-center.current-turn {
-                            transform: translateY(90px) scale(1.05);
-                        }
                     }
 
                     /* Estilos para la lista de resultados en el modal */

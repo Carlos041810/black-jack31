@@ -22,7 +22,8 @@ body {
     align-items: center;
     border-bottom: 3px solid #D4AF37;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    position: relative; /* Para que el menú móvil se posicione relativo a la barra */
+    position: relative;
+    /* Para que el menú móvil se posicione relativo a la barra */
 }
 
 .left-group {
@@ -70,7 +71,8 @@ body {
 /*SIDEBAR*/
 
 .online-status {
-    display: none; /* Oculto en pantallas grandes */
+    display: none;
+    /* Oculto en pantallas grandes */
     align-items: center;
     gap: 10px;
     color: #D4AF37;
@@ -94,9 +96,17 @@ body {
 }
 
 @keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 
@@ -123,9 +133,10 @@ body {
     text-align: center;
     order: 1;
     min-height: 150px;
+    margin-top: -150px;
     /* Asegura espacio vertical */
 }
- 
+
 .dealer-hand {
     display: flex;
     justify-content: center;
@@ -168,7 +179,8 @@ text {
     display: flex;
     justify-content: center;
     align-items: center;
-    gap: 150px; /* Reducido para evitar overflow en pantallas medianas */
+    gap: 150px;
+    /* Reducido para evitar overflow en pantallas medianas */
     margin-top: 20px;
     min-height: 120px;
     margin-bottom: 20px;
@@ -180,7 +192,8 @@ text {
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    min-width: 170px; /* Ancho mínimo para evitar que los elementos se muevan al cambiar el texto */
+    min-width: 170px;
+    /* Ancho mínimo para evitar que los elementos se muevan al cambiar el texto */
 }
 
 /* =========================
@@ -316,7 +329,8 @@ text {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 0 12px 8px 12px; /* Eliminamos el padding superior */
+    padding: 0 12px 8px 12px;
+    /* Eliminamos el padding superior */
     border-radius: 8px;
 }
 
@@ -342,7 +356,8 @@ text {
            EFECTOS DE CURVA PARA CARTAS
            ========================= */
 .curve-left {
-    transform: translateX(-50px) translateY(-25px) rotate(15deg); /* Mueve el jugador izquierdo más a la izquierda */
+    transform: translateX(-50px) translateY(-25px) rotate(15deg);
+    /* Mueve el jugador izquierdo más a la izquierda */
 }
 
 .curve-center {
@@ -350,24 +365,13 @@ text {
 }
 
 .curve-right {
-    transform: translateX(50px) translateY(-25px) rotate(-15deg); /* Mueve el jugador derecho más a la derecha */
+    transform: translateX(50px) translateY(-25px) rotate(-15deg);
+    /* Mueve el jugador derecho más a la derecha */
 }
 
 /* =========================
            ÁREA DE APUESTAS
            ========================= */
-.betting-area {
-    position: fixed; /* Cambiado para overlay */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.7); /* Fondo oscuro semitransparente */
-    display: flex; /* Para centrar el contenido */
-    align-items: center;
-    justify-content: center;
-    z-index: 1000; /* Asegura que esté por encima de todo */
-}
 
 .betting-modal-content {
     background: rgba(0, 0, 0, 0.9);
@@ -375,9 +379,10 @@ text {
     padding: 30px 40px;
     border-radius: 15px;
     border: 2px solid #D4AF37;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
     display: flex;
-    flex-direction: column; /* Apilar elementos verticalmente */
+    flex-direction: column;
+    /* Apilar elementos verticalmente */
     align-items: center;
     gap: 20px;
     text-align: center;
@@ -399,6 +404,7 @@ text {
     color: white;
     transition: background 0.2s;
 }
+
 .betting-buttons #confirmBetBtn {
     background: linear-gradient(45deg, #D4AF37, #F4E678);
     color: black;
@@ -492,14 +498,17 @@ text {
 .mobile-menu {
     display: none;
     flex-direction: column;
-    gap: 15px; /* Espacio entre botones */
+    gap: 15px;
+    /* Espacio entre botones */
     position: absolute;
-    top: 100%; /* Justo debajo de la barra superior */
+    top: 100%;
+    /* Justo debajo de la barra superior */
     right: 0;
     background: rgba(0, 0, 0, 0.9);
     padding: 20px;
     border-radius: 10px;
-    z-index: 1100; /* Aumentado para estar por encima de todo */
+    z-index: 1100;
+    /* Aumentado para estar por encima de todo */
     min-width: 200px;
 }
 
@@ -512,29 +521,14 @@ text {
     display: inline-block;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
 
-    .invite-section,
-    .desktop-only {
-        display: none;
-        /* ocultamos estos en móvil */
-    }
-
-    .menu-toggle {
-        display: block;
-        /* mostramos hamburguesa */
-    }
-}
 
 /* =========================
            ÁREA DE ACCIONES DEL JUGADOR
            ========================= */
 .player-actions {
     position: fixed;
-    bottom: 50px; /* Subido para mayor visibilidad */
-    left: 50%;
-    transform: translateX(-50%);
+    bottom: 50px;
     display: flex;
     gap: 15px;
     padding: 15px;
@@ -556,14 +550,29 @@ text {
     text-align: center;
 }
 
-.action-btn.hit { background: linear-gradient(45deg, #27ae60, #2ecc71); color: white; }
-.action-btn.stand { background: linear-gradient(45deg, #e74c3c, #c0392b); color: white; }
-.action-btn.double { background: linear-gradient(45deg, #3498db, #2980b9); color: white; }
-.action-btn.split { background: linear-gradient(45deg, #9b59b6, #8e44ad); color: white; }
+.action-btn.hit {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.action-btn.stand {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.action-btn.double {
+    background: linear-gradient(45deg, #3498db, #2980b9);
+    color: white;
+}
+
+.action-btn.split {
+    background: linear-gradient(45deg, #9b59b6, #8e44ad);
+    color: white;
+}
 
 .action-btn:hover:not(:disabled) {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
 }
 
 .action-btn:disabled {
@@ -579,27 +588,30 @@ text {
 }
 
 @media (max-width: 1220px) {
-      .player-cards {
+    .player-cards {
         gap: 20px;
         /* menos separación entre jugadores */
     }
 
     .player-actions {
         width: 90%;
-        bottom: 15px; /* Subido ligeramente del borde */
+        bottom: 15px;
+        /* Subido ligeramente del borde */
         left: 0;
         transform: none;
         border-radius: 20px 20px 0 0;
         padding: 10px;
         gap: 8px;
         justify-content: center;
-        flex-wrap: wrap; /* Permite que los botones bajen si no caben */
+        flex-wrap: wrap;
+        /* Permite que los botones bajen si no caben */
     }
 
     .action-btn {
         padding: 10px 15px;
         font-size: 0.8em;
-        min-width: 90px; /* Ancho mínimo más pequeño */
+        min-width: 90px;
+        /* Ancho mínimo más pequeño */
     }
 
     .player-area {
@@ -612,43 +624,71 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: 105px;
-        gap: 30px; /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
+        margin-top: -205px;
+        gap: 30px;
+        /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
 
     .online-status {
-        display: flex; /* Se muestra en pantallas pequeñas */
+        display: flex;
+        /* Se muestra en pantallas pequeñas */
     }
 
     .dealer-hand {
-        min-height: 105px; /* 10% menos de 120px */
+        min-height: 105px;
+        /* 10% menos de 120px */
     }
 
     /* Reducción del 10% para cartas y pila */
-    .card, .deck-pile, .card-slot {
+    .card,
+    .deck-pile,
+    .card-slot {
         width: 72px;
         height: 105px;
     }
 
     .svg-container {
-        margin-top: -20px; /* Sube el texto decorativo */
+        margin-top: -20px;
+        /* Sube el texto decorativo */
     }
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-40px) translateX(50%) rotate(10deg);
+        transform: translateY(-90px) translateX(10%) rotate(10deg);
     }
 
     .curve-right {
-        transform: translateY(-40px) translateX(-50%) rotate(-10deg);
+        transform: translateY(-90px) translateX(-10%) rotate(-10deg);
     }
+
     .curve-center {
-    transform: translateY(90px); /* siempre más abajo */
+        transform: translateY(90px);
+        /* siempre más abajo */
     }
 }
 
-/* Tablets grandes y laptops chicas */
-@media (max-width: 992px) {
+/* Responsive */
+@media (max-width: 1024px) {
+
+        .dealer-area {
+        text-align: center;
+        order: 1;
+        margin-bottom: 0;
+        margin-top: -180px;
+        gap: 30px;
+    }
+
+
+    .invite-section,
+    .desktop-only {
+        display: none;
+        /* ocultamos estos en móvil */
+    }
+
+    .menu-toggle {
+        display: block;
+        /* mostramos hamburguesa */
+    }
         .curve-left {
         transform: translateY(-90px) translateX(-70px) rotate(10deg);
     }
@@ -656,11 +696,47 @@ text {
     .curve-right {
         transform: translateY(-90px) translateX(40%) rotate(-10deg);
     }
+
     .curve-center {
-    transform: translateY(90px); /* siempre más abajo */
+        transform: translateY(90px);
+        /* siempre más abajo */
     }
+
     .player-cards {
-        gap: 10px; /* Reducir aún más el gap */
+        gap: 10px;
+        /* Reducir aún más el gap */
+    }
+
+}
+
+
+/* Tablets grandes y laptops chicas */
+@media (max-width: 992px) {
+    .dealer-area {
+        text-align: center;
+        order: 1;
+        margin-bottom: 0;
+        margin-top: -230px;
+        gap: 30px;
+    }
+
+
+    .curve-left {
+        transform: translateY(-90px) translateX(-70px) rotate(10deg);
+    }
+
+    .curve-right {
+        transform: translateY(-90px) translateX(40%) rotate(-10deg);
+    }
+
+    .curve-center {
+        transform: translateY(90px);
+        /* siempre más abajo */
+    }
+
+    .player-cards {
+        gap: 10px;
+        /* Reducir aún más el gap */
     }
 
 
@@ -670,17 +746,25 @@ text {
 
 
 @media (max-width: 700px) {
-        .end-round-modal-content {
+    .end-round-modal-content {
         min-width: 0;
-        width: 90vw; /* Ocupa el 90% del ancho de la pantalla */
-        padding: 25px 15px; /* Reduce el padding */
-        min-height: auto; /* Permite que la altura se ajuste al contenido */
+        width: 90vw;
+        /* Ocupa el 90% del ancho de la pantalla */
+        padding: 25px 15px;
+        /* Reduce el padding */
+        min-height: auto;
+        /* Permite que la altura se ajuste al contenido */
     }
-
+        .player-actions {
+            margin-bottom: 40%;
+    }
     .betting-modal-content {
-        width: 90vw; /* Limita el ancho al 90% de la pantalla */
-        padding: 20px 15px; /* Reduce el padding lateral */
-        margin: 0 auto; /* Asegura el centrado horizontal */
+        width: 90vw;
+        /* Limita el ancho al 90% de la pantalla */
+        padding: 20px 15px;
+        /* Reduce el padding lateral */
+        margin: 0 auto;
+        /* Asegura el centrado horizontal */
     }
 
     .player-cards {
@@ -688,22 +772,14 @@ text {
         /* menos separación entre jugadores */
     }
 
-    .player-actions {
-        width: 100%;
-        bottom: 80px; /* Subido ligeramente del borde */
-        left: 0;
-        transform: none;
-        border-radius: 20px 20px 0 0;
-        padding: 10px;
-        gap: 8px;
-        justify-content: center;
-        flex-wrap: wrap; /* Permite que los botones bajen si no caben */
-    }
+
+
 
     .action-btn {
         padding: 10px 15px;
         font-size: 0.8em;
-        min-width: 90px; /* Ancho mínimo más pequeño */
+        min-width: 90px;
+        /* Ancho mínimo más pequeño */
     }
 
     .player-area {
@@ -716,118 +792,72 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -165px;
-        gap: 30px; /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
+        margin-top: -260px;
+        gap: 30px;
+        /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
 
     .online-status {
-        display: flex; /* Se muestra en pantallas pequeñas */
+        display: flex;
+        /* Se muestra en pantallas pequeñas */
     }
 
     .dealer-hand {
-        min-height: 105px; /* 10% menos de 120px */
+        min-height: 105px;
+        /* 10% menos de 120px */
     }
 
     /* Reducción del 10% para cartas y pila */
-    .card, .deck-pile, .card-slot {
+    .card,
+    .deck-pile,
+    .card-slot {
         width: 72px;
         height: 105px;
     }
 
     .svg-container {
-        margin-top: -40px; /* Sube el texto decorativo */
+        margin-top: -40px;
+        /* Sube el texto decorativo */
     }
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-40px) translateX(50%);
+        transform: translateY(-140px) translateX(50%);
     }
 
     .curve-right {
-        transform: translateY(-40px) translateX(-50%);
+        transform: translateY(-140px) translateX(-50%);
     }
+
     .curve-center {
-    transform: translateY(90px); /* siempre más abajo */
+        transform: translateY(-20px);
+        /* siempre más abajo */
     }
 }
 
-
-@media (max-width: 567px) {
-    .player-cards {
-        gap: 5px; /* Reducir la separación para que estén más juntos */
-        margin-top: 10px;
-        margin-bottom: 10px;
-    }
-
-    .top-bar {
-        padding: 10px 10px; /* Reducir padding para acercar a los bordes */
-    }
-
-    .exit-btn {
-        padding: 8px 12px; /* Botón más pequeño */
-        font-size: 0.8em;
-    }
-
-    /* Reducir el contenedor del jugador */
-    .player-position {
-        padding: 8px;
-        margin: 5px;
-        min-width: 140px; /* Asegurar un ancho mínimo para que el texto no se comprima */
-        gap: 8px; /* Reducir espacio interno */
-    }
-
-    /* Reducir el tamaño de las cartas y su contenedor */
-    .card, .card-slot {
-        width: 65px;
-        height: 95px;
-    }
-
-    .player-cards-hand {
-        min-height: 95px; /* Ajustar a la nueva altura de la carta */
-    }
-
-    /* Reducir el tamaño de la fuente en la información del jugador */
-    .player-name-display, .player-balance, .player-bet {
-        font-size: 0.85em;
-    }
-
-    .player-area {
-        order: 2;
-        margin-top: -90px;
-    }
-
-    .dealer-area {
-        text-align: center;
-        order: 1;
-        margin-bottom: -60px;
-    }
-
-
-    .game-area {
-        margin-top: -20px;
-    }
-}
 
 
 /* =========================
            MODAL FIN DE RONDA
            ========================= */
+.betting-area,
 .end-round-modal {
     position: fixed !important;
     top: 0 !important;
     left: 0 !important;
-    right: 0 !important; /* Añadir esta línea */
-    bottom: 0 !important; /* Añadir esta línea */
-    width: 100% !important;
-    height: 100% !important;
-    background: rgba(0, 0, 0, 0.8) !important;
+    width: 100vw !important;
+    /* Usar viewport width para garantizar ancho completo */
+    height: 100vh !important;
+    /* Usar viewport height para garantizar altura completa */
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex;
     align-items: center !important;
     justify-content: center !important;
-    z-index: 1500 !important;
-    margin: 0 !important; /* Resetear cualquier margin */
-    padding: 0 !important; /* Resetear cualquier padding */
-    transform: none !important; /* Eliminar cualquier transform */
+    overflow: hidden;
+    /* Evitar scroll en el overlay */
 }
+
 .end-round-modal-content {
     background: rgba(10, 10, 10, 0.95) !important;
     padding: 40px !important;
@@ -835,13 +865,18 @@ text {
     border: 2px solid #D4AF37 !important;
     min-width: 400px !important;
     min-height: 300px !important;
-    max-width: 90vw !important; /* Limitar ancho máximo */
-    max-height: 90vh !important; /* Limitar altura máxima */
+    max-width: 90vw !important;
+    /* Limitar ancho máximo */
+    max-height: 90vh !important;
+    /* Limitar altura máxima */
     box-shadow: 0 0 30px rgba(212, 175, 55, 0.3) !important;
     position: relative !important;
-    margin: 0 !important; /* Resetear margin */
-    transform: none !important; /* Eliminar cualquier transform */
-    overflow-y: auto !important; /* Scroll si el contenido es muy largo */
+    margin: 0 !important;
+    /* Resetear margin */
+    transform: none !important;
+    /* Eliminar cualquier transform */
+    overflow-y: auto !important;
+    /* Scroll si el contenido es muy largo */
 }
 
 .close-button {
@@ -858,33 +893,4 @@ text {
     color: white;
     text-decoration: none;
     cursor: pointer;
-}
-
-/* Ajuste para el modal de puntuación en móviles pequeños */
-@media (max-width: 480px) {
-.end-round-modal-content {
-        left: 5% !important; /* Asegura que el modal esté dentro de la pantalla */
-        min-width: 0 !important;
-        width: 90vw !important;
-        padding: 25px 15px !important;
-        min-height: auto !important;
-        margin: 20px !important; /* Añadir margen en móviles */
-    }
-    .player-cards-hand {
-        position: relative;
-        height: 120px; /* Fijar altura para evitar saltos de layout */
-    }
-
-
-
-    .betting-modal-content {
-        width: 90vw; /* Limita el ancho al 90% de la pantalla */
-        padding: 20px 15px; /* Reduce el padding lateral */
-        margin: 0 auto; /* Asegura el centrado horizontal */
-    }
-
-    .chips {
-        flex-wrap: wrap; /* Permite que las fichas bajen a la siguiente línea */
-        justify-content: center; /* Mantiene las fichas centradas */
-    }
 }
