@@ -792,7 +792,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -260px;
+        margin-top: -215px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
@@ -816,7 +816,7 @@ text {
     }
 
     .svg-container {
-        margin-top: -40px;
+        margin-top: -60px;
         /* Sube el texto decorativo */
     }
 
