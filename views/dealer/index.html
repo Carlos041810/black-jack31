@@ -19,6 +19,11 @@
                 <span id="roomCodeText">Código: </span>
                 <button id="copyBtn">COPY</button>
             </div>
+            <div class="online-status">
+                <div class="status-icon"></div>
+                <span class="user-icon">👥</span>
+                <h2 id="contador">0</h2>
+            </div>
         </div>
         <div class="dealer-title">DEALER VIEW</div>
         <button class="menu-toggle" id="menuToggle">
@@ -32,14 +37,13 @@
         <button class="how-to-play desktop-only">🔊 HOW TO PLAY</button>
     </header>
 
+    <!-- BOTÓN FLOTANTE PARA ABRIR CONTROLES (SOLO MÓVIL) -->
+    <button class="open-controls-btn" id="openControlsBtn">
+        <i class="fas fa-cogs"></i>
+    </button>
+
     <!-- SIDEBAR -->
-    <div class="sidebar">
-        <div class="online-status">
-            <div class="status-icon"></div>
-            <span class="user-icon">👥</span>
-            <h2 id="contador">0</h2>
-        </div>
-        
+    <div class="sidebar" id="dealerControlsModal">
         <!-- PANEL DE CONTROL DEL DEALER -->
         <div class="dealer-controls">
             <h3>Control del Juego</h3>
@@ -216,6 +220,25 @@ function setupEventListeners() {
     document.getElementById('dealCardsBtn').addEventListener('click', dealCards);
     document.getElementById('revealCardBtn').addEventListener('click', revealDealerCardAction);
     document.getElementById('resetGameBtn').addEventListener('click', resetGame);
+
+    // Controles del modal en móvil
+    const openControlsBtn = document.getElementById('openControlsBtn');
+    const dealerControlsModal = document.getElementById('dealerControlsModal');
+
+    if (openControlsBtn && dealerControlsModal) {
+        openControlsBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Evita que el clic se propague al window
+            dealerControlsModal.classList.toggle('active');
+        });
+
+        // Listener para cerrar el modal si se hace clic fuera de él
+        window.addEventListener('click', (e) => {
+            // Si el modal está activo Y el clic NO fue dentro del modal Y el clic NO fue en el botón que lo abre
+            if (dealerControlsModal.classList.contains('active') && !dealerControlsModal.contains(e.target) && !openControlsBtn.contains(e.target)) {
+                dealerControlsModal.classList.remove('active');
+            }
+        });
+    }
 }
 
 // Configurar eventos de Socket.IO

@@ -97,49 +97,38 @@ body {
     top: 80px;
     width: 300px;
     height: calc(100vh - 80px);
-    background: rgba(0, 0, 0, 0.9);
-    border-right: 3px solid #D4AF37;
     padding: 20px;
     overflow-y: auto;
     z-index: 100;
 }
 
 .online-status {
-    text-align: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: rgba(212, 175, 55, 0.1);
-    border-radius: 15px;
-    border: 2px solid #D4AF37;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #D4AF37;
 }
 
 .status-icon {
-    width: 15px;
-    height: 15px;
+    width: 10px;
+    height: 10px;
     background: #27ae60;
     border-radius: 50%;
-    margin: 0 auto 10px;
     animation: pulse 2s infinite;
 }
 
 .user-icon {
-    font-size: 2em;
-    display: block;
-    margin-bottom: 10px;
+    font-size: 1.5em;
 }
 
 #contador {
-    font-size: 2.5em;
+    font-size: 1.5em;
     color: #D4AF37;
     font-weight: bold;
 }
 
 .dealer-controls {
-    background: rgba(0, 0, 0, 0.8);
     padding: 20px;
-    margin: 20px 0;
-    border-radius: 15px;
-    border: 2px solid #D4AF37;
 }
 
 .dealer-controls h3 {
@@ -589,18 +578,21 @@ body {
     }
 
     .mobile-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
+        position: absolute; /* Posicionado relativo al .top-bar */
+        top: 90%; /* Justo debajo de la barra */
+        right: 20px; /* Alineado a la derecha */
         background: rgba(0, 0, 0, 0.95);
         padding: 20px;
         border-radius: 10px;
         min-width: 200px;
-        display: none; /* Oculto por defecto */
-        flex-direction: column; /* Apila los botones verticalmente */
-        gap: 15px; /* Espacio entre botones */
-        z-index: 1100; /* Asegura que esté por encima de todo */
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1100;
+        margin-bottom: 30px;
+        
     }
+
 
     .mobile-menu.active {
         display: flex;
@@ -626,6 +618,7 @@ body {
         margin: 10px auto;
         min-height: auto;
         margin-bottom: -120px;
+        margin-top: -15px;
     }
 
     /* --- Lógica de posicionamiento para el diseño de jugadores en móvil --- */
@@ -669,8 +662,25 @@ body {
 
 @media (max-width: 600px) {
     .sidebar {
-        transform: translateX(-100%);
-        transition: transform 0.3s;
+        /* 1. Posicionamos el panel donde debe estar, pero lo ocultamos */
+        width: 90%;
+        max-width: 320px;
+        height: auto;
+        left: auto;
+        right: 10px;
+        bottom: 100px; /* Aumentado para dejar espacio al botón de abajo */
+        top: auto;
+        background: rgba(0, 0, 0, 0.95);
+        border: 2px solid #D4AF37;
+        border-radius: 15px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
+        padding-top: 40px;
+
+        /* 2. Lo ocultamos con opacidad y lo movemos ligeramente para la animación */
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(15px) scale(0.98);
+        transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
     }
 
     .top-bar {
@@ -682,12 +692,44 @@ body {
         font-size: 0.8em;
     }
 
-    .sidebar.active {
-        transform: translateX(0);
-    }
-
     .game-area {
         margin-left: 0;
         padding: 15px;
+    }
+
+    .online-status {
+        display: none; /* Ocultar en el menú principal en móvil para evitar redundancia */
+    }
+
+    /* Botón flotante para abrir controles en móvil */
+    .open-controls-btn {
+        position: fixed;
+        bottom: 100px; /* Aumentado para separarlo más del borde */
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(45deg, #D4AF37, #F4E678);
+        color: black;
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8em;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+        cursor: pointer;
+        z-index: 1050;
+        transition: transform 0.3s;
+    }
+    .open-controls-btn:hover {
+        transform: scale(1.1);
+    }
+
+    /* Convertimos el sidebar en un panel flotante en la esquina inferior derecha */
+    .sidebar.active {
+        /* 3. Al activarse, lo hacemos visible y lo devolvemos a su posición original */
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0) scale(1);
     }
 }
