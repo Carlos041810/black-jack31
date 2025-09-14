@@ -10,84 +10,6 @@ body {
     color: white;
     overflow-x: hidden;
 }
-/* HEADER Y NAVEGACIÓN */
-
-.top-bar {
-    background: linear-gradient(90deg, #000, #1a1a1a);
-    padding: 15px 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 3px solid #D4AF37;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-    position: relative; /* Asegura que el menú móvil se posicione relativo a la barra */
-}
-
-.left-group {
-    display: flex;
-    align-items: center;
-    gap: 20px;
-}
-
-.exit-btn,
-.how-to-play {
-    background: linear-gradient(45deg, #D4AF37, #F4E678);
-    color: black;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-}
-
-.exit-btn:hover,
-.how-to-play:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
-}
-
-.invite-section {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #D4AF37;
-    font-weight: bold;
-}
-
-#copyBtn {
-    background: #D4AF37;
-    color: black;
-    border: none;
-    padding: 5px 15px;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 0.8em;
-}
-
-.dealer-title {
-    color: #D4AF37;
-    font-size: 1.5em;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: #D4AF37;
-    font-size: 1.5em;
-    cursor: pointer;
-}
-
-.mobile-menu {
-    display: none;
-}
-
-.desktop-only {
-    display: block;
-}
 
 /*SIDEBAR*/
 
@@ -100,31 +22,6 @@ body {
     padding: 20px;
     overflow-y: auto;
     z-index: 100;
-}
-
-.online-status {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: #D4AF37;
-}
-
-.status-icon {
-    width: 10px;
-    height: 10px;
-    background: #27ae60;
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-.user-icon {
-    font-size: 1.5em;
-}
-
-#contador {
-    font-size: 1.5em;
-    color: #D4AF37;
-    font-weight: bold;
 }
 
 .dealer-controls {
@@ -242,7 +139,8 @@ body {
 }
 
 .player-cards {
-    display: flex; /* Por defecto, una fila horizontal */
+    display: flex;
+    /* Por defecto, una fila horizontal */
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
@@ -254,6 +152,7 @@ body {
 .player-cards::-webkit-scrollbar {
     height: 8px;
 }
+
 .player-cards::-webkit-scrollbar-thumb {
     background: #D4AF37;
     border-radius: 4px;
@@ -268,6 +167,13 @@ body {
     border: 2px dashed rgba(212, 175, 55, 0.5);
     border-radius: 15px;
     background: rgba(212, 175, 55, 0.05);
+}
+
+/* Centrar el mensaje de espera cuando no hay jugadores */
+.player-cards:has(.waiting-message) {
+    display: block;
+    max-width: 600px;
+    /* Un ancho máximo para que no se estire demasiado */
 }
 
 .player-position {
@@ -324,9 +230,12 @@ body {
 }
 
 .player-cards-hand .card:hover {
-    transform: translateY(-15px) rotate(0deg); /* Eleva la carta y centra al pasar el mouse */
-    z-index: 100; /* Siempre encima al pasar mouse */
+    transform: translateY(-15px) rotate(0deg);
+    /* Eleva la carta y centra al pasar el mouse */
+    z-index: 100;
+    /* Siempre encima al pasar mouse */
 }
+
 .card-slot {
     border: 2px dashed rgba(255, 255, 255, 0.3);
     border-radius: 10px;
@@ -431,7 +340,8 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s;
 }
-.card:hover {   
+
+.card:hover {
     transform: translateY(-5px);
 }
 
@@ -565,39 +475,6 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
-    .invite-section {
-        display: none;
-    }
-
-    .menu-toggle {
-        display: block;
-    }
-
-    .desktop-only {
-        display: none;
-    }
-
-    .mobile-menu {
-        position: absolute; /* Posicionado relativo al .top-bar */
-        top: 90%; /* Justo debajo de la barra */
-        right: 20px; /* Alineado a la derecha */
-        background: rgba(0, 0, 0, 0.95);
-        padding: 20px;
-        border-radius: 10px;
-        min-width: 200px;
-        display: none;
-        flex-direction: column;
-        gap: 15px;
-        z-index: 1100;
-        margin-bottom: 30px;
-        
-    }
-
-
-    .mobile-menu.active {
-        display: flex;
-    }
-
     .sidebar {
         width: 250px;
     }
@@ -624,28 +501,38 @@ body {
     /* --- Lógica de posicionamiento para el diseño de jugadores en móvil --- */
     /* 1 jugador: centrado */
     .player-cards .player-position:only-child {
-        grid-column: 1 / -1; /* Ocupa toda la fila */
+        grid-column: 1 / -1;
+        /* Ocupa toda la fila */
     }
+
     /* 2 jugadores: uno al lado del otro */
     .player-cards .player-position:nth-child(1):nth-last-child(2) {
         grid-column: 1;
     }
+
     .player-cards .player-position:nth-child(2):nth-last-child(1) {
         grid-column: 2;
     }
+
     /* 3 jugadores: diseño de triángulo */
     .player-cards .player-position:nth-child(1):nth-last-child(3) {
-        grid-column: 1 / -1; /* El primero ocupa toda la fila superior */
+        grid-column: 1 / -1;
+        /* El primero ocupa toda la fila superior */
     }
 
     .player-position {
-        min-width: 140px; /* Reducimos el ancho para que quepan 2 por fila */
+        min-width: 140px;
+        /* Reducimos el ancho para que quepan 2 por fila */
         padding: 10px;
-        max-width: 180px; /* Limitamos el ancho para que no se estiren demasiado */
+        max-width: 180px;
+        /* Limitamos el ancho para que no se estiren demasiado */
     }
+
     .dealer-area {
-        margin-top: -140px; /* Subir el área del dealer */
-        padding-top: 10px; /* Reducir su padding superior */
+        margin-top: -140px;
+        /* Subir el área del dealer */
+        padding-top: 10px;
+        /* Reducir su padding superior */
     }
 
     /* Reducir cartas para que quepan mejor */
@@ -655,9 +542,9 @@ body {
     }
 
     .player-cards-hand {
-        height: 105px; /* Reducir altura para acomodar cartas más pequeñas */
+        height: 105px;
     }
-    
+
 }
 
 @media (max-width: 600px) {
@@ -668,7 +555,8 @@ body {
         height: auto;
         left: auto;
         right: 10px;
-        bottom: 100px; /* Aumentado para dejar espacio al botón de abajo */
+        bottom: 100px;
+        /* Aumentado para dejar espacio al botón de abajo */
         top: auto;
         background: rgba(0, 0, 0, 0.95);
         border: 2px solid #D4AF37;
@@ -682,29 +570,16 @@ body {
         transform: translateY(15px) scale(0.98);
         transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
     }
-
-    .top-bar {
-        padding: 10px 10px; /* Reducir padding para acercar a los bordes */
-    }
-
-    .exit-btn {
-        padding: 8px 12px; /* Botón más pequeño */
-        font-size: 0.8em;
-    }
-
     .game-area {
         margin-left: 0;
         padding: 15px;
     }
 
-    .online-status {
-        display: none; /* Ocultar en el menú principal en móvil para evitar redundancia */
-    }
-
     /* Botón flotante para abrir controles en móvil */
     .open-controls-btn {
         position: fixed;
-        bottom: 100px; /* Aumentado para separarlo más del borde */
+        bottom: 100px;
+        /* Aumentado para separarlo más del borde */
         right: 20px;
         width: 60px;
         height: 60px;
@@ -721,6 +596,7 @@ body {
         z-index: 1050;
         transition: transform 0.3s;
     }
+
     .open-controls-btn:hover {
         transform: scale(1.1);
     }
@@ -731,5 +607,9 @@ body {
         opacity: 1;
         visibility: visible;
         transform: translateY(0) scale(1);
+    }
+
+    .dealer-area {
+        gap: 30px;
     }
 }

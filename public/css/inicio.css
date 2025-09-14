@@ -308,7 +308,7 @@
             }
 
             .options-container {
-                flex-direction: column;
+            flex-direction: column-reverse;
                 gap: 20px;
             }
 
@@ -320,10 +320,16 @@
             .option-title {
                 font-size: 22px;
             }
+
+            .option-button {
+                font-size: 16px;
+                padding: 12px 30px;
+            }
         }
 
         @media (max-height: 700px) {
             body {
                 align-items: flex-start;
+                font-size: 10px;
             }
         }

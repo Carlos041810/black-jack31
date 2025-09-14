@@ -1,41 +1,20 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Online - Vista del Dealer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/dealer.css">
 </head>
 
 <body>
-    <!-- HEADER -->
-    <header class="top-bar">
-        <div class="left-group">
-            <button class="exit-btn" onclick="exitRoom()">
-                <i class="fas fa-door-open"></i> EXIT ROOM
-            </button>
-            <div class="invite-section">
-                <span id="roomCodeText">Código: </span>
-                <button id="copyBtn">COPY</button>
-            </div>
-            <div class="online-status">
-                <div class="status-icon"></div>
-                <span class="user-icon">👥</span>
-                <h2 id="contador">0</h2>
-            </div>
-        </div>
-        <div class="dealer-title">DEALER VIEW</div>
-        <button class="menu-toggle" id="menuToggle">
-            <i class="fas fa-bars"></i>
-        </button>
-        <nav class="mobile-menu" id="mobileMenu">
-            <button class="how-to-play">🔊 HOW TO PLAY</button>
-            <button class="exit-btn" onclick="exitRoom()">EXIT</button>
-            <button onclick="copyRoomCode()">COPY INVITE</button>
-        </nav>
-        <button class="how-to-play desktop-only">🔊 HOW TO PLAY</button>
-    </header>
+
+    <!-- El header reutilizable se insertará aquí desde el servidor -->
+
+
 
     <!-- BOTÓN FLOTANTE PARA ABRIR CONTROLES (SOLO MÓVIL) -->
     <button class="open-controls-btn" id="openControlsBtn">
@@ -47,7 +26,7 @@
         <!-- PANEL DE CONTROL DEL DEALER -->
         <div class="dealer-controls">
             <h3>Control del Juego</h3>
-            
+
             <!-- Estado actual -->
             <div class="game-status">
                 <div class="status-item">
@@ -69,15 +48,15 @@
                 <button id="startBettingBtn">
                     <i class="fas fa-play"></i> INICIAR APUESTAS
                 </button>
-                
+
                 <button id="dealCardsBtn" disabled>
                     <i class="fas fa-layer-group"></i> REPARTIR CARTAS
                 </button>
-                
+
                 <button id="revealCardBtn" style="display: none;">
                     <i class="fas fa-eye"></i> MOSTRAR CARTA
                 </button>
-                
+
                 <button id="resetGameBtn">
                     <i class="fas fa-redo"></i> REINICIAR
                 </button>
@@ -102,7 +81,7 @@
                 <div class="waiting-message">Esperando jugadores...</div>
             </div>
         </div>
-        
+
         <!-- SVG DECORATIVO -->
         <div class="svg-container">
             <svg viewBox="0 0 1000 400" style="width: 100%; height: 300px;">
@@ -115,19 +94,21 @@
                     </filter>
                 </defs>
                 <use href="#curve-middle" stroke="#D4AF37" stroke-width="4" fill="none" filter="url(#shadow)" />
-                <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="56" text-anchor="middle" filter="url(#shadow)">
+                <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="56"
+                    text-anchor="middle" filter="url(#shadow)">
                     <textPath href="#curve-top" startOffset="50%">
                         BLACKJACK 31 PAYS 3 TO 2
                     </textPath>
                 </text>
-                <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="36" text-anchor="middle" filter="url(#shadow)">
+                <text font-family="Times New Roman, serif" font-weight="bold" fill="#D4AF37" font-size="36"
+                    text-anchor="middle" filter="url(#shadow)">
                     <textPath href="#curve-bottom" startOffset="50%">
                         DEALER MUST STAND ON 27 AND DRAW TO 26
                     </textPath>
                 </text>
             </svg>
         </div>
-        
+
         <!-- ÁREA DEL DEALER -->
         <div class="dealer-area">
             <!-- La pila de cartas (baraja) -->
@@ -147,373 +128,360 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/header.js"></script>
     <script>
 
         // Variables globales
-const socket = io();
-let roomCode = '';
-let gameState = 'waiting';
-let playersList = [];
-let bettingTimer = null;
+        const socket = io();
+        let roomCode = '';
+        let gameState = 'waiting';
+        let playersList = [];
+        let bettingTimer = null;
 
-// Inicialización
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🎮 Iniciando vista del dealer...');
-    
-    // Extraer código de la URL
-    const params = new URLSearchParams(window.location.search);
-    roomCode = params.get('codigo');
-    
-    console.log('📍 Código de sala detectado:', roomCode);
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🎮 Iniciando vista del dealer...');
 
-    if (roomCode) {
-        setupRoomCode();
-        joinRoomAsDealer();
-    } else {
-        showNotification('No se encontró código de sala', 'error');
-        return;
-    }
+            // Extraer código de la URL
+            const params = new URLSearchParams(window.location.search);
+            roomCode = params.get('codigo');
 
-    setupEventListeners();
-    setupSocketEvents();
-});
+            console.log('📍 Código de sala detectado:', roomCode);
 
-// Configurar código de sala
-function setupRoomCode() {
-    const roomCodeText = document.getElementById('roomCodeText');
-    const copyBtn = document.getElementById('copyBtn');
-
-    roomCodeText.textContent = `Código: ${roomCode}`;
-    
-    copyBtn.onclick = copyRoomCode;
-}
-
-// Unirse como dealer
-function joinRoomAsDealer() {
-    console.log('🎯 Uniéndose a la sala como dealer...');
-    // Emitir sin playerName para identificarse como dealer
-    socket.emit('joinRoom', roomCode);
-}
-
-// Configurar event listeners
-function setupEventListeners() {
-    // Menú hamburguesa
-    const menuToggle = document.getElementById('menuToggle');
-    const mobileMenu = document.getElementById('mobileMenu');
-
-    if (menuToggle && mobileMenu) {
-        menuToggle.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el evento de clic se propague al 'window'
-            mobileMenu.classList.toggle('active');
-        });
-
-        // Listener para cerrar el menú si se hace clic fuera de él
-        window.addEventListener('click', (e) => {
-            if (mobileMenu.classList.contains('active') && !mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-                mobileMenu.classList.remove('active');
+            if (roomCode) {
+                setupRoomCode();
+                joinRoomAsDealer();
+            } else {
+                showNotification('No se encontró código de sala', 'error');
+                return;
             }
-        });
-    }
 
-    // Botones de control
-    document.getElementById('startBettingBtn').addEventListener('click', startBetting);
-    document.getElementById('dealCardsBtn').addEventListener('click', dealCards);
-    document.getElementById('revealCardBtn').addEventListener('click', revealDealerCardAction);
-    document.getElementById('resetGameBtn').addEventListener('click', resetGame);
-
-    // Controles del modal en móvil
-    const openControlsBtn = document.getElementById('openControlsBtn');
-    const dealerControlsModal = document.getElementById('dealerControlsModal');
-
-    if (openControlsBtn && dealerControlsModal) {
-        openControlsBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el clic se propague al window
-            dealerControlsModal.classList.toggle('active');
+            setupEventListeners();
+            setupSocketEvents();
         });
 
-        // Listener para cerrar el modal si se hace clic fuera de él
-        window.addEventListener('click', (e) => {
-            // Si el modal está activo Y el clic NO fue dentro del modal Y el clic NO fue en el botón que lo abre
-            if (dealerControlsModal.classList.contains('active') && !dealerControlsModal.contains(e.target) && !openControlsBtn.contains(e.target)) {
-                dealerControlsModal.classList.remove('active');
-            }
-        });
-    }
-}
+        // Configurar código de sala
+        function setupRoomCode() {
+            const roomCodeText = document.getElementById('roomCodeText');
+            const mobileRoomCodeText = document.getElementById('mobileRoomCodeText');
+            const copyBtn = document.getElementById('copyBtn');
 
-// Configurar eventos de Socket.IO
-function setupSocketEvents() {
-    console.log('📡 Configurando eventos de Socket.IO...');
+            const codeDisplay = `${roomCode}`;
+            if (roomCodeText) roomCodeText.textContent = codeDisplay;
+            if (mobileRoomCodeText) mobileRoomCodeText.textContent = codeDisplay;
 
-    // Conexión establecida
-    socket.on('connect', () => {
-        console.log('✅ Conectado al servidor con ID:', socket.id);
-        showNotification('Conectado al servidor', 'success');
-    });
-
-    // Lista de jugadores actualizada
-    socket.on('updatePlayerList', (players) => {
-        console.log('👥 Lista de jugadores actualizada:', players);
-        playersList = players;
-        renderPlayers(players);
-        updateGameStatus();
-    });
-
-    // Estado del juego actualizado
-    socket.on('gameStateUpdate', (data) => {
-        console.log('🎮 Estado del juego actualizado:', data);
-        gameState = data.state;
-        updateGameStateDisplay();
-        updateControlButtons();
-    });
-
-    // Período de apuestas iniciado
-    socket.on('bettingStarted', (data) => {
-        console.log('🎲 Período de apuestas iniciado:', data);
-        showNotification('¡Período de apuestas iniciado!', 'info');
-        startBettingTimer(data.duration);
-        updateControlButtons();
-    });
-
-    // Apuestas cerradas
-    socket.on('bettingClosed', () => {
-        console.log('⏰ Período de apuestas cerrado');
-        showNotification('Período de apuestas cerrado', 'warning');
-        stopBettingTimer();
-        updateControlButtons();
-    });
-
-    // Jugador confirmó apuesta
-    socket.on('playerBetConfirmed', (data) => {
-        console.log('✅ Jugador confirmó apuesta:', data);
-        showNotification(`${data.playerName} confirmó $${data.bet}`, 'success');
-        updateGameStatus();
-        
-        // Verificar si todos confirmaron
-        const allConfirmed = playersList.every(p => p.betConfirmed);
-        if (allConfirmed && playersList.length > 0) {
-            showNotification('¡Todos confirmaron! Listo para repartir cartas', 'success');
+            // Asignar el evento de copia a ambos botones si existen
+            if (copyBtn) copyBtn.onclick = copyRoomCode;
         }
-    });
 
-    // Actualización de turno
-    socket.on('turnUpdate', (data) => {
-        console.log(`[TURN] Turno de: ${data.playerName}`);
-        showNotification(`Turno de: ${data.playerName}`, 'info');
-        highlightCurrentPlayer(data.playerId);
-    });
+        // Unirse como dealer
+        function joinRoomAsDealer() {
+            console.log('🎯 Uniéndose a la sala como dealer...');
+            // Emitir sin playerName para identificarse como dealer
+            socket.emit('joinRoom', roomCode);
+        }
 
-    // Un jugador pide una carta (Hit)
-    socket.on('playerCardUpdate', (data) => {
-        console.log(`[CARD UPDATE] Jugador ${data.playerId} recibe una carta.`);
-        
-        const deckElement = document.querySelector('.deck-pile');
-        if (!deckElement) return;
-        const deckRect = deckElement.getBoundingClientRect();
+        // Configurar event listeners
+        function setupEventListeners() {
+            // Botones de control
+            document.getElementById('startBettingBtn').addEventListener('click', startBetting);
+            document.getElementById('dealCardsBtn').addEventListener('click', dealCards);
+            document.getElementById('revealCardBtn').addEventListener('click', revealDealerCardAction);
+            document.getElementById('resetGameBtn').addEventListener('click', resetGame);
 
-        const dealInfo = {
-            target: 'player',
-            id: data.playerId,
-            card: data.newCard
-        };
-        dealOneCard(dealInfo, deckRect);
-    });
+            // Controles del modal en móvil
+            const openControlsBtn = document.getElementById('openControlsBtn');
+            const dealerControlsModal = document.getElementById('dealerControlsModal');
 
-    // Un jugador se pasa de 21
-    socket.on('playerBust', (data) => {
-        console.log(`[BUST] ${data.playerName} se ha pasado.`);
-        showNotification(`${data.playerName} se pasó con ${data.score}!`, 'error');
-        const playerDiv = document.querySelector(`.player-position[data-player-id="${data.playerId}"]`);
-        if (playerDiv) {
-            const cardsInHand = playerDiv.querySelectorAll('.player-cards-hand .card');
-            cardsInHand.forEach(card => {
-                card.classList.add('busted-card');
+            if (openControlsBtn && dealerControlsModal) {
+                openControlsBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Evita que el clic se propague al window
+                    dealerControlsModal.classList.toggle('active');
+                });
+
+                // Listener para cerrar el modal si se hace clic fuera de él
+                window.addEventListener('click', (e) => {
+                    // Si el modal está activo Y el clic NO fue dentro del modal Y el clic NO fue en el botón que lo abre
+                    if (dealerControlsModal.classList.contains('active') && !dealerControlsModal.contains(e.target) && !openControlsBtn.contains(e.target)) {
+                        dealerControlsModal.classList.remove('active');
+                    }
+                });
+            }
+        }
+
+        // Configurar eventos de Socket.IO
+        function setupSocketEvents() {
+            console.log('📡 Configurando eventos de Socket.IO...');
+
+            // Conexión establecida
+            socket.on('connect', () => {
+                console.log('✅ Conectado al servidor con ID:', socket.id);
+                showNotification('Conectado al servidor', 'success');
             });
-            playerDiv.classList.add('busted');
-        }
-    });
 
-    // El turno pasa al dealer
-    socket.on('dealerTurn', () => {
-        console.log('[DEALER TURN] Turno del dealer.');
-        showNotification('Tu turno. Revela tu carta.', 'info');
-        // Des-resaltar a todos los jugadores
-        highlightCurrentPlayer(null);
-        // Mostrar el botón para revelar la carta
-        document.getElementById('revealCardBtn').style.display = 'inline-block';
-        document.getElementById('revealCardBtn').disabled = false; // Asegurarse de que esté habilitado
-        updateControlButtons();
-    });
+            // Lista de jugadores actualizada
+            socket.on('updatePlayerList', (players) => {
+                console.log('👥 Lista de jugadores actualizada:', players);
+                playersList = players;
+                renderPlayers(players);
+                updateGameStatus();
+            });
 
-    // El dealer revela su carta
-    socket.on('revealDealerCard', (data) => {
-        console.log('[DEALER REVEAL] El dealer revela su mano completa:', data.dealerHand);
-        const dealerHandContainer = document.getElementById('dealerCards');
-        
-        // Ocultar el botón una vez que la acción se completa
-        document.getElementById('revealCardBtn').style.display = 'none';
+            // Estado del juego actualizado
+            socket.on('gameStateUpdate', (data) => {
+                console.log('🎮 Estado del juego actualizado:', data);
+                gameState = data.state;
+                updateGameStateDisplay();
+                updateControlButtons();
+            });
 
-        // Limpiar la mano actual (que contiene cartas ocultas)
-        dealerHandContainer.innerHTML = '';
+            // Período de apuestas iniciado
+            socket.on('bettingStarted', (data) => {
+                console.log('🎲 Período de apuestas iniciado:', data);
+                showNotification('¡Período de apuestas iniciado!', 'info');
+                startBettingTimer(data.duration);
+                updateControlButtons();
+            });
 
-        // Renderizar la mano completa del dealer con todas las cartas visibles
-        data.dealerHand.forEach(cardData => {
-            const cardElement = createCardElement(cardData);
-            cardElement.style.position = 'absolute'; // Necesario para el efecto abanico
-            dealerHandContainer.appendChild(cardElement);
-        });
-        
-        // Re-aplicar el efecto abanico para ajustar las posiciones de todas las cartas
-        applyFanEffect();
-    });
+            // Apuestas cerradas
+            socket.on('bettingClosed', () => {
+                console.log('⏰ Período de apuestas cerrado');
+                showNotification('Período de apuestas cerrado', 'warning');
+                stopBettingTimer();
+                updateControlButtons();
+            });
 
-    // El dealer pide una carta (Hit)
-    socket.on('dealerCardUpdate', (data) => {
-        console.log(`[DEALER HIT] Dealer recibe una carta.`);
-        
-        const deckElement = document.querySelector('.deck-pile');
-        if (!deckElement) return;
-        const deckRect = deckElement.getBoundingClientRect();
+            // Jugador confirmó apuesta
+            socket.on('playerBetConfirmed', (data) => {
+                console.log('✅ Jugador confirmó apuesta:', data);
+                showNotification(`${data.playerName} confirmó $${data.bet}`, 'success');
+                updateGameStatus();
 
-        const dealInfo = {
-            target: 'dealer',
-            card: data.newCard
-        };
-        // Animar la carta que pide el dealer
-        dealOneCard(dealInfo, deckRect);
-    });
+                // Verificar si todos confirmaron
+                const allConfirmed = playersList.every(p => p.betConfirmed);
+                if (allConfirmed && playersList.length > 0) {
+                    showNotification('¡Todos confirmaron! Listo para repartir cartas', 'success');
+                }
+            });
 
-    // Resultados del juego
-    socket.on('gameResults', (data) => {
-        console.log('[RESULTS] Resultados recibidos:', data);
-        showNotification('Ronda finalizada. Mostrando resultados...', 'success');
-        addResultStyles(); // Asegurarse de que los estilos existan
+            // Actualización de turno
+            socket.on('turnUpdate', (data) => {
+                console.log(`[TURN] Turno de: ${data.playerName}`);
+                showNotification(`Turno de: ${data.playerName}`, 'info');
+                highlightCurrentPlayer(data.playerId);
+            });
 
-        // Ocultar el mensaje de turno si existe
-        const turnDisplay = document.getElementById('turnDisplay');
-        if (turnDisplay) turnDisplay.style.display = 'none';
+            // Un jugador pide una carta (Hit)
+            socket.on('playerCardUpdate', (data) => {
+                console.log(`[CARD UPDATE] Jugador ${data.playerId} recibe una carta.`);
 
-        data.results.forEach(result => {
-            const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
-            if (playerDiv) {
-                // Crear un div para el resultado
-                const resultOverlay = document.createElement('div');
-                resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
-                
-                resultOverlay.innerHTML = `
+                const deckElement = document.querySelector('.deck-pile');
+                if (!deckElement) return;
+                const deckRect = deckElement.getBoundingClientRect();
+
+                const dealInfo = {
+                    target: 'player',
+                    id: data.playerId,
+                    card: data.newCard
+                };
+                dealOneCard(dealInfo, deckRect);
+            });
+
+            // Un jugador se pasa de 21
+            socket.on('playerBust', (data) => {
+                console.log(`[BUST] ${data.playerName} se ha pasado.`);
+                showNotification(`${data.playerName} se pasó con ${data.score}!`, 'error');
+                const playerDiv = document.querySelector(`.player-position[data-player-id="${data.playerId}"]`);
+                if (playerDiv) {
+                    const cardsInHand = playerDiv.querySelectorAll('.player-cards-hand .card');
+                    cardsInHand.forEach(card => {
+                        card.classList.add('busted-card');
+                    });
+                    playerDiv.classList.add('busted');
+                }
+            });
+
+            // El turno pasa al dealer
+            socket.on('dealerTurn', () => {
+                console.log('[DEALER TURN] Turno del dealer.');
+                showNotification('Tu turno. Revela tu carta.', 'info');
+                // Des-resaltar a todos los jugadores
+                highlightCurrentPlayer(null);
+                // Mostrar el botón para revelar la carta
+                document.getElementById('revealCardBtn').style.display = 'inline-block';
+                document.getElementById('revealCardBtn').disabled = false; // Asegurarse de que esté habilitado
+                updateControlButtons();
+            });
+
+            // El dealer revela su carta
+            socket.on('revealDealerCard', (data) => {
+                console.log('[DEALER REVEAL] El dealer revela su mano completa:', data.dealerHand);
+                const dealerHandContainer = document.getElementById('dealerCards');
+
+                // Ocultar el botón una vez que la acción se completa
+                document.getElementById('revealCardBtn').style.display = 'none';
+
+                // Limpiar la mano actual (que contiene cartas ocultas)
+                dealerHandContainer.innerHTML = '';
+
+                // Renderizar la mano completa del dealer con todas las cartas visibles
+                data.dealerHand.forEach(cardData => {
+                    const cardElement = createCardElement(cardData);
+                    cardElement.style.position = 'absolute'; // Necesario para el efecto abanico
+                    dealerHandContainer.appendChild(cardElement);
+                });
+
+                // Re-aplicar el efecto abanico para ajustar las posiciones de todas las cartas
+                applyFanEffect();
+            });
+
+            // El dealer pide una carta (Hit)
+            socket.on('dealerCardUpdate', (data) => {
+                console.log(`[DEALER HIT] Dealer recibe una carta.`);
+
+                const deckElement = document.querySelector('.deck-pile');
+                if (!deckElement) return;
+                const deckRect = deckElement.getBoundingClientRect();
+
+                const dealInfo = {
+                    target: 'dealer',
+                    card: data.newCard
+                };
+                // Animar la carta que pide el dealer
+                dealOneCard(dealInfo, deckRect);
+            });
+
+            // Resultados del juego
+            socket.on('gameResults', (data) => {
+                console.log('[RESULTS] Resultados recibidos:', data);
+                showNotification('Ronda finalizada. Mostrando resultados...', 'success');
+                addResultStyles(); // Asegurarse de que los estilos existan
+
+                // Ocultar el mensaje de turno si existe
+                const turnDisplay = document.getElementById('turnDisplay');
+                if (turnDisplay) turnDisplay.style.display = 'none';
+
+                data.results.forEach(result => {
+                    const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
+                    if (playerDiv) {
+                        // Crear un div para el resultado
+                        const resultOverlay = document.createElement('div');
+                        resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
+
+                        resultOverlay.innerHTML = `
                     <div class="outcome-text">${result.outcome}</div>
                     <div class="score-text">Puntos: ${result.playerScore}</div>
                 `;
-                
-                playerDiv.appendChild(resultOverlay);
 
-                // Actualizar el balance en la vista del dealer
-                const balanceDisplay = playerDiv.querySelector('.player-balance');
-                if (balanceDisplay) {
-                    balanceDisplay.textContent = `Balance: $${result.newBalance}`;
-                }
-            }
-        });
+                        playerDiv.appendChild(resultOverlay);
 
-        // Mostrar la puntuación final del dealer
-        const dealerHandContainer = document.getElementById('dealerCards');
-        // Remover score display anterior si existe
-        const oldScoreDisplay = dealerHandContainer.querySelector('.dealer-score-display');
-        if (oldScoreDisplay) oldScoreDisplay.remove();
+                        // Actualizar el balance en la vista del dealer
+                        const balanceDisplay = playerDiv.querySelector('.player-balance');
+                        if (balanceDisplay) {
+                            balanceDisplay.textContent = `Balance: $${result.newBalance}`;
+                        }
+                    }
+                });
 
-        const dealerScoreDisplay = document.createElement('div');
-        dealerScoreDisplay.className = 'dealer-score-display';
-        let dealerText = `Puntuación del Dealer: ${data.dealerScore}`;
-        if (data.dealerScore > 21) {
+                // Mostrar la puntuación final del dealer
+                const dealerHandContainer = document.getElementById('dealerCards');
+                // Remover score display anterior si existe
+                const oldScoreDisplay = dealerHandContainer.querySelector('.dealer-score-display');
+                if (oldScoreDisplay) oldScoreDisplay.remove();
+
+                const dealerScoreDisplay = document.createElement('div');
+                dealerScoreDisplay.className = 'dealer-score-display';
+                let dealerText = `Puntuación del Dealer: ${data.dealerScore}`;
+                if (data.dealerScore > 21) {
                     dealerText += ' (BUST)'; // Esto se recalcula en el cliente, pero la lógica del servidor ya lo maneja
-        } else if (data.dealerScore === 21 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
-            dealerText += ' (BLACKJACK)';
+                } else if (data.dealerScore === 21 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
+                    dealerText += ' (BLACKJACK)';
+                }
+                dealerScoreDisplay.textContent = dealerText;
+
+                // Insertar el display de puntuación al principio del contenedor
+                dealerHandContainer.appendChild(dealerScoreDisplay);
+            });
+
+            // Errores
+            socket.on('error', (data) => {
+                console.error('❌ Error del servidor:', data);
+                showNotification('Error: ' + data.message, 'error');
+            });
+
+            // Desconexión
+            socket.on('disconnect', () => {
+                console.log('❌ Desconectado del servidor');
+                showNotification('Desconectado del servidor', 'error');
+            });
+
+            // Juego reiniciado
+            socket.on('gameReset', () => {
+                console.log('🔄 Juego reiniciado por el servidor.');
+                showNotification('El juego ha sido reiniciado.', 'info');
+                // Limpiar manos y highlights
+                document.getElementById('dealerCards').innerHTML = '';
+                document.querySelectorAll('.player-cards-hand').forEach(hand => hand.innerHTML = '');
+                document.querySelectorAll('.player-position').forEach(div => {
+                    div.classList.remove('current-turn');
+                    div.classList.remove('busted');
+                    // Remover overlays de resultados
+                    const overlay = div.querySelector('.result-overlay');
+                    if (overlay) overlay.remove();
+                });
+                document.getElementById('revealCardBtn').style.display = 'none';
+                document.getElementById('revealCardBtn').disabled = false; // Resetear para la siguiente ronda
+                // Remover puntuación del dealer
+                const dealerScore = document.querySelector('.dealer-score-display');
+                if (dealerScore) dealerScore.remove();
+                stopBettingTimer();
+            });
+
+            // Eventos adicionales que podrían estar faltando
+            socket.on('reconnect', () => {
+                console.log('🔄 Reconectado al servidor');
+                showNotification('Reconectado', 'success');
+                // Volver a unirse a la sala
+                if (roomCode) {
+                    socket.emit('joinRoom', roomCode);
+                }
+            });
         }
-        dealerScoreDisplay.textContent = dealerText;
 
-        // Insertar el display de puntuación al principio del contenedor
-        dealerHandContainer.appendChild(dealerScoreDisplay);
-    });
+        // === FUNCIONES DE RENDERIZADO ===
 
-    // Errores
-    socket.on('error', (data) => {
-        console.error('❌ Error del servidor:', data);
-        showNotification('Error: ' + data.message, 'error');
-    });
+        function renderPlayers(players) {
+            const playerCardsContainer = document.getElementById('playerCards');
 
-    // Desconexión
-    socket.on('disconnect', () => {
-        console.log('❌ Desconectado del servidor');
-        showNotification('Desconectado del servidor', 'error');
-    });
+            if (players.length === 0) {
+                playerCardsContainer.innerHTML = '<div class="waiting-message">Esperando jugadores...</div>';
+                return;
+            }
 
-    // Juego reiniciado
-    socket.on('gameReset', () => {
-        console.log('🔄 Juego reiniciado por el servidor.');
-        showNotification('El juego ha sido reiniciado.', 'info');
-        // Limpiar manos y highlights
-        document.getElementById('dealerCards').innerHTML = '';
-        document.querySelectorAll('.player-cards-hand').forEach(hand => hand.innerHTML = '');
-        document.querySelectorAll('.player-position').forEach(div => {
-            div.classList.remove('current-turn');
-            div.classList.remove('busted');
-            // Remover overlays de resultados
-            const overlay = div.querySelector('.result-overlay');
-            if (overlay) overlay.remove();
-        });
-        document.getElementById('revealCardBtn').style.display = 'none';
-        document.getElementById('revealCardBtn').disabled = false; // Resetear para la siguiente ronda
-        // Remover puntuación del dealer
-        const dealerScore = document.querySelector('.dealer-score-display');
-        if (dealerScore) dealerScore.remove();
-        stopBettingTimer();
-    });
+            playerCardsContainer.innerHTML = '';
 
-    // Eventos adicionales que podrían estar faltando
-    socket.on('reconnect', () => {
-        console.log('🔄 Reconectado al servidor');
-        showNotification('Reconectado', 'success');
-        // Volver a unirse a la sala
-        if (roomCode) {
-            socket.emit('joinRoom', roomCode);
-        }
-    });
-}
+            players.forEach((player, index) => {
+                const playerDiv = document.createElement('div');
+                playerDiv.className = 'player-position';
+                playerDiv.dataset.playerId = player.id;
 
-// === FUNCIONES DE RENDERIZADO ===
+                let betDisplay = '';
+                let floatingBetHtml = '';
 
-function renderPlayers(players) {
-    const playerCardsContainer = document.getElementById('playerCards');
-    
-    if (players.length === 0) {
-        playerCardsContainer.innerHTML = '<div class="waiting-message">Esperando jugadores...</div>';
-        return;
-    }
-
-    playerCardsContainer.innerHTML = '';
-
-    players.forEach((player, index) => {
-        const playerDiv = document.createElement('div');
-        playerDiv.className = 'player-position';
-        playerDiv.dataset.playerId = player.id;
-
-        let betDisplay = '';
-        let floatingBetHtml = '';
-
-        if (player.betConfirmed && player.bet > 0) {
-            floatingBetHtml = `<div class="confirmed-bet-floater">$${player.bet}</div>`;
-            betDisplay = `
+                if (player.betConfirmed && player.bet > 0) {
+                    floatingBetHtml = `<div class="confirmed-bet-floater">$${player.bet}</div>`;
+                    betDisplay = `
                 <div class="bet-confirmed-icon">
                     <i class="fas fa-check-circle"></i> 
                     <span>Confirmado</span>
                 </div>`;
-        } else if (player.bet > 0) {
-            betDisplay = `<div class="bet-pending">$${player.bet} (Esperando)</div>`;
-        } else {
-            betDisplay = `<div class="no-bet">Sin apuesta</div>`;
-        }
+                } else if (player.bet > 0) {
+                    betDisplay = `<div class="bet-pending">$${player.bet} (Esperando)</div>`;
+                } else {
+                    betDisplay = `<div class="no-bet">Sin apuesta</div>`;
+                }
 
-        playerDiv.innerHTML = `
+                playerDiv.innerHTML = `
             <div class="player-header">
                 <div class="player-name-display">${player.name}</div>
                 <div class="player-balance">$${player.balance || 100}</div>
@@ -524,15 +492,15 @@ function renderPlayers(players) {
             <div class="player-bet">${betDisplay}</div>
             ${floatingBetHtml}`;
 
-        playerCardsContainer.appendChild(playerDiv);
-    });
-}
+                playerCardsContainer.appendChild(playerDiv);
+            });
+        }
 
-function addPlayerStyles() {
-    if (document.getElementById('dealer-player-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'dealer-player-styles';
-    style.innerHTML = `
+        function addPlayerStyles() {
+            if (document.getElementById('dealer-player-styles')) return;
+            const style = document.createElement('style');
+            style.id = 'dealer-player-styles';
+            style.innerHTML = `
         .player-position.busted {
             background: rgba(192, 57, 43, 0.4);
             border-color: #e74c3c;
@@ -553,14 +521,14 @@ function addPlayerStyles() {
             box-shadow: 0 0 10px rgba(231, 76, 60, 0.7);
             opacity: 0.8;
         }`;
-    document.head.appendChild(style);
-}
+            document.head.appendChild(style);
+        }
 
-function addResultStyles() {
-    if (document.getElementById('game-result-styles')) return;
-    const style = document.createElement('style');
-    style.id = 'game-result-styles';
-    style.innerHTML = `
+        function addResultStyles() {
+            if (document.getElementById('game-result-styles')) return;
+            const style = document.createElement('style');
+            style.id = 'game-result-styles';
+            style.innerHTML = `
         .result-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
@@ -606,490 +574,490 @@ function addResultStyles() {
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
     `;
-    document.head.appendChild(style);
-}
-
-// === FUNCIONES DE CONTROL ===
-
-function highlightCurrentPlayer(playerId) {
-    // Remover highlight de todos los jugadores primero
-    document.querySelectorAll('.player-position').forEach(div => {
-        div.classList.remove('current-turn');
-    });
-
-    if (!playerId) {
-        // Si no hay ID de jugador, es el turno del dealer o un estado intermedio.
-        return;
-    }
-
-    // Agregar highlight al jugador actual
-    const playerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
-    if (playerDiv) {
-        playerDiv.classList.add('current-turn');
-    }
-}
-
-function updateGameStatus() {
-    const playersCount = playersList.length;
-    const confirmedCount = playersList.filter(p => p.betConfirmed).length;
-
-    document.getElementById('contador').textContent = playersCount;
-    document.getElementById('playersCount').textContent = playersCount;
-    document.getElementById('confirmedCount').textContent = `${confirmedCount}/${playersCount}`;
-
-    updateControlButtons();
-    addPlayerStyles(); // Asegurarse de que los estilos de 'busted' existan
-}
-
-function updateGameStateDisplay() {
-    const display = document.getElementById('gameStateDisplay');
-    display.className = `game-state-${gameState}`;
-    
-    const stateNames = {
-        waiting: 'Esperando',
-        betting: 'Apostando',
-        playing: 'Jugando',
-        finished: 'Finalizado'
-    };
-    
-    display.textContent = stateNames[gameState] || gameState;
-}
-
-function updateControlButtons() {
-    const startBettingBtn = document.getElementById('startBettingBtn');
-    const dealCardsBtn = document.getElementById('dealCardsBtn');
-    
-    console.log(`Actualizando botones - Estado: ${gameState}, Jugadores: ${playersList.length}`);
-    
-    // Botón iniciar apuestas
-    if (gameState === 'waiting' && playersList.length > 0) {
-        startBettingBtn.disabled = false;
-        startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
-        startBettingBtn.style.opacity = '1';
-    } else if (gameState === 'betting') {
-        startBettingBtn.disabled = true;
-        startBettingBtn.innerHTML = '<i class="fas fa-clock"></i> APOSTANDO...';
-        startBettingBtn.style.opacity = '0.6';
-    } else {
-        startBettingBtn.disabled = true;
-        startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
-        startBettingBtn.style.opacity = '0.6';
-    }
-    
-    // Botón repartir cartas
-    const allConfirmed = playersList.length > 0 && playersList.every(p => p.betConfirmed);
-    const dealerHasCards = document.getElementById('dealerCards').children.length > 0;
-    
-    if (gameState === 'playing' && allConfirmed && !dealerHasCards) {
-        dealCardsBtn.disabled = false;
-        dealCardsBtn.style.opacity = '1';
-    } else {
-        dealCardsBtn.disabled = true;
-        dealCardsBtn.style.opacity = '0.6';
-    }
-}
-
-function revealDealerCardAction() {
-    console.log('-> Emitiendo dealerRevealCard');
-    document.getElementById('revealCardBtn').disabled = true; // Deshabilitar para evitar clics múltiples
-    socket.emit('dealerRevealCard');
-}
-
-// === FUNCIONES DE TIMER ===
-
-function startBettingTimer(duration) {
-    const timerElement = document.getElementById('bettingTimer');
-    const displayElement = document.getElementById('timerDisplay');
-    const progressElement = document.getElementById('timerProgress');
-    
-    timerElement.style.display = 'block';
-    let timeLeft = duration;
-    
-    // Actualización inicial
-    const seconds = Math.ceil(timeLeft / 1000);
-    displayElement.textContent = `${seconds}s`;
-    progressElement.style.width = '100%';
-    
-    bettingTimer = setInterval(() => {
-        timeLeft -= 1000;
-        
-        const seconds = Math.ceil(timeLeft / 1000);
-        displayElement.textContent = `${seconds}s`;
-        
-        const progressPercent = Math.max(0, (timeLeft / duration) * 100);
-        progressElement.style.width = `${progressPercent}%`;
-        
-        // Cambiar color cuando quedan pocos segundos
-        if (seconds <= 10) {
-            displayElement.style.color = '#ff4757';
-            progressElement.style.background = 'linear-gradient(90deg, #ff4757, #ff6b6b)';
-        }
-        
-        if (timeLeft <= 0) {
-            stopBettingTimer();
-        }
-    }, 1000);
-}
-
-function stopBettingTimer() {
-    if (bettingTimer) {
-        clearInterval(bettingTimer);
-        bettingTimer = null;
-    }
-    
-    const timerElement = document.getElementById('bettingTimer');
-    const displayElement = document.getElementById('timerDisplay');
-    const progressElement = document.getElementById('timerProgress');
-    
-    timerElement.style.display = 'none';
-    
-    // Resetear estilos
-    displayElement.style.color = '#ff6b6b';
-    progressElement.style.background = 'linear-gradient(90deg, #ff6b6b, #ffa500)';
-}
-
-// === FUNCIONES DE CONTROL DEL JUEGO ===
-
-function startBetting() {
-    console.log('🎯 Iniciando período de apuestas...');
-    
-    if (playersList.length === 0) {
-        showNotification('No hay jugadores en la sala', 'warning');
-        return;
-    }
-    
-    if (gameState !== 'waiting') {
-        showNotification('No se puede iniciar apuestas en este momento', 'warning');
-        return;
-    }
-    
-    const duration = 30000; // 30 segundos
-    console.log('📡 Emitiendo evento startBetting con duración:', duration);
-    
-    // Deshabilitar botón inmediatamente para evitar múltiples clics
-    const startBettingBtn = document.getElementById('startBettingBtn');
-    startBettingBtn.disabled = true;
-    startBettingBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> INICIANDO...';
-    
-    socket.emit('startBetting', duration);
-    
-    // Feedback visual inmediato
-    showNotification('Iniciando período de apuestas...', 'info');
-}
-
-function dealCards() {
-    console.log('🎰 Repartiendo cartas...');
-    
-    const allConfirmed = playersList.every(p => p.betConfirmed);
-    if (!allConfirmed || playersList.length === 0) {
-        showNotification('No todos los jugadores han confirmado sus apuestas', 'warning');
-        return;
-    }
-    
-    // Deshabilitar botón para evitar clics múltiples
-    document.getElementById('dealCardsBtn').disabled = true;
-    
-    // Emitir evento al servidor para que reparta las cartas
-    socket.emit('dealCards');
-}
-
-function resetGame() {
-    if (confirm('¿Seguro que quieres reiniciar el juego? Esto limpiará todas las apuestas.')) {
-        console.log('🔄 Reiniciando juego...');
-        
-        socket.emit('resetGame');
-        showNotification('Reiniciando juego...', 'info');
-        
-        // Limpiar timer si está activo
-        stopBettingTimer();
-        
-        // Resetear estado local
-        gameState = 'waiting';
-        updateGameStateDisplay();
-        updateControlButtons();
-    }
-}
-
-// === LÓGICA DE ANIMACIÓN DE CARTAS ===
-
-socket.on('cardsDealt', (data) => {
-    console.log('🃏 Recibiendo cartas del servidor:', data);
-    
-    // Limpiar manos actuales antes de repartir
-    document.getElementById('dealerCards').innerHTML = '';
-    document.querySelectorAll('.player-cards-hand').forEach(hand => {
-        hand.innerHTML = '';
-    });
-
-    // Aunque el dealer conoce su mano completa (data.dealer), para la animación
-    // inicial, debemos mostrar las cartas como las ven los jugadores.
-    // La mano real del dealer se renderiza al final de la animación.
-    const dealerHandForDisplay = [
-        { hidden: true }, // Primera carta oculta para la animación
-        { hidden: true }, // Segunda carta oculta para la animación
-        data.dealer[2]    // Tercera carta visible
-    ];
-    animateDealing(data.players, dealerHandForDisplay);
-});
-
-function createCardElement(card) {
-    const cardDiv = document.createElement('div');
-    
-    if (card.hidden) {
-        cardDiv.className = 'card card-back';
-        return cardDiv;
-    }
-
-    // Usar la imagen de la carta como fondo
-    cardDiv.className = 'card';
-    cardDiv.style.backgroundImage = `url('/${card.src}')`;
-    // Opcional: puedes dejar el texto superpuesto si tu CSS lo permite
-    return cardDiv;
-}
-
-async function animateDealing(players, dealerHand) {
-    const deckElement = document.querySelector('.deck-pile');
-    if (!deckElement) return;
-
-    const deckRect = deckElement.getBoundingClientRect();
-    const playersWithBets = players.filter(p => playersList.find(pl => pl.id === p.id && pl.betConfirmed));
-
-    const dealSequence = [];
-
-    // Ronda 1: Jugadores -> Dealer
-    playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] }));
-    dealSequence.push({ target: 'dealer', card: dealerHand[0] });
-
-    // Ronda 2: Jugadores -> Dealer
-    playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] }));
-    dealSequence.push({ target: 'dealer', card: dealerHand[1] });
-
-    // Ronda 3: Jugadores -> Dealer
-    playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] }));
-    dealSequence.push({ target: 'dealer', card: dealerHand[2] });
-
-
-    for (const deal of dealSequence) {
-        await dealOneCard(deal, deckRect);
-    }
-
-    // CORRECCIÓN: Después de la animación, el dealer debe renderizar su mano real.
-    // La animación muestra la segunda carta como oculta, pero el dealer ya conoce su valor.
-    // Aquí sincronizamos la vista con los datos reales que recibió.
-    const dealerHandContainer = document.getElementById('dealerCards');
-    dealerHandContainer.innerHTML = ''; // Limpiar la mano animada
-
-    dealerHand.forEach(cardData => {
-        const cardElement = createCardElement(cardData);
-        cardElement.style.position = 'absolute';
-        dealerHandContainer.appendChild(cardElement);
-    });
-
-    // Aplicar el efecto abanico a la mano real y final.
-    applyFanEffect(); 
-}
-
-function dealOneCard(deal, deckRect) {
-    return new Promise(resolve => {
-        let targetHandElement;
-        if (deal.target === 'player') {
-            targetHandElement = document.querySelector(`.player-position[data-player-id="${deal.id}"] .player-cards-hand`);
-        } else {
-            targetHandElement = document.getElementById('dealerCards');
+            document.head.appendChild(style);
         }
 
-        if (!targetHandElement) {
-            console.warn(`No se encontró el contenedor de mano para ${deal.target} ${deal.id || ''}`);
-            return resolve();
-        }
+        // === FUNCIONES DE CONTROL ===
 
-        const cardElement = createCardElement(deal.card);
-        cardElement.classList.add('dealing-animation');
-        cardElement.style.left = `${deckRect.left}px`;
-        cardElement.style.top = `${deckRect.top}px`;
+        function highlightCurrentPlayer(playerId) {
+            // Remover highlight de todos los jugadores primero
+            document.querySelectorAll('.player-position').forEach(div => {
+                div.classList.remove('current-turn');
+            });
 
-        document.body.appendChild(cardElement);
-
-        const targetRect = targetHandElement.getBoundingClientRect();
-        // Apuntar la animación al centro del contenedor de la mano para un aterrizaje suave.
-        // Restamos la mitad del ancho/alto de la carta para centrarla.
-        const cardWidth = 80;
-        const cardHeight = 120;
-        const targetX = targetRect.left + (targetRect.width / 2) - (cardWidth / 2);
-        const targetY = targetRect.top + (targetRect.height / 2) - (cardHeight / 2);
-
-        // Pequeño delay para que la transición se aplique correctamente
-        setTimeout(() => {
-            cardElement.style.transform = `translate(${targetX - deckRect.left}px, ${targetY - deckRect.top}px) rotate(360deg)`;
-            
-            cardElement.addEventListener('transitionend', () => {
-                cardElement.remove(); // Eliminar la carta animada
-                const finalCard = createCardElement(deal.card);
-                finalCard.style.position = 'absolute'; // Aseguramos que la carta final se pueda posicionar
-                targetHandElement.appendChild(finalCard); // Añadir la carta final estática
-                applyFanEffect(); // Re-aplicar el abanico en cada carta para un efecto progresivo
-                resolve();
-            }, { once: true });
-        }, 50);
-    });
-}
-
-// === FUNCIONES AUXILIARES ===
-
-function applyFanEffect() {
-    const hands = document.querySelectorAll('.player-cards-hand, .dealer-hand');
-
-    hands.forEach(hand => {
-        hand.style.position = 'relative';
-
-        const cards = hand.querySelectorAll('.card');
-        const total = cards.length;
-        if (total === 0) return;
-
-        const maxAngle = 20; // Ángulo máximo de rotación
-        const horizontalSpread = window.innerWidth < 768 ? 20 : 30; // Separación de cartas responsive
-        const totalWidth = (total - 1) * horizontalSpread;
-
-        cards.forEach((card, index) => {
-            const pivotIndex = (total - 1) / 2;
-            let angle = 0;
-            // Evitar división por cero si solo hay una carta
-            if (total > 1 && pivotIndex > 0) {
-                angle = (index - pivotIndex) * (maxAngle / pivotIndex);
+            if (!playerId) {
+                // Si no hay ID de jugador, es el turno del dealer o un estado intermedio.
+                return;
             }
-            const horizontalOffset = (index * horizontalSpread) - (totalWidth / 2);
-            
-            // Posicionar cada carta desde el centro del contenedor
-            card.style.left = '50%';
-            // El transform ahora incluye un ajuste para centrar la propia carta (-50% de su ancho)
-            // y luego aplica el desplazamiento para el efecto abanico.
-            card.style.transform = `translateX(calc(-50% + ${horizontalOffset}px)) rotate(${angle}deg)`;
-        });
-    });
-}
 
-function copyRoomCode() {
-    if (roomCode) {
-        navigator.clipboard.writeText(roomCode)
-            .then(() => {
-                showNotification('¡Código copiado al portapapeles!', 'success');
-            })
-            .catch(err => {
-                console.error('Error al copiar:', err);
-                // Fallback para navegadores que no soportan clipboard API
-                const textArea = document.createElement('textarea');
-                textArea.value = roomCode;
-                document.body.appendChild(textArea);
-                textArea.select();
-                try {
-                    document.execCommand('copy');
-                    showNotification('¡Código copiado al portapapeles!', 'success');
-                } catch (fallbackErr) {
-                    showNotification('Error al copiar código', 'error');
-                }
-                document.body.removeChild(textArea);
-            });
-    }
-}
-
-function showNotification(message, type = 'info') {
-    // Remover notificaciones existentes
-    const existingNotifications = document.querySelectorAll('.notification');
-    existingNotifications.forEach(notification => notification.remove());
-    
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    
-    document.body.appendChild(notification);
-
-    // Auto-remover después de 4 segundos
-    setTimeout(() => {
-        if (notification.parentNode) {
-            notification.remove();
+            // Agregar highlight al jugador actual
+            const playerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
+            if (playerDiv) {
+                playerDiv.classList.add('current-turn');
+            }
         }
-    }, 4000);
-    
-    console.log(`📢 Notificación [${type.toUpperCase()}]: ${message}`);
-}
 
-// Función para salir de la sala 
-async function exitRoom() {
-    if (confirm('¿Seguro que quieres cerrar la sala? Esto desconectará a todos los jugadores.')) {
-        try {
-            showNotification('Cerrando sala...', 'info');
-            
-            // Intentar cerrar la sala en el servidor
-            const response = await fetch('/salir-mesa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ codigo: roomCode })
-            });
-            
-            if (response.ok) {
-                showNotification('Sala cerrada exitosamente', 'success');
-                setTimeout(() => {
-                    window.location.href = '/';
-                }, 1500);
+        function updateGameStatus() {
+            const playersCount = playersList.length;
+            const confirmedCount = playersList.filter(p => p.betConfirmed).length;
+
+            document.getElementById('contador').textContent = playersCount;
+            document.getElementById('playersCount').textContent = playersCount;
+            document.getElementById('confirmedCount').textContent = `${confirmedCount}/${playersCount}`;
+
+            updateControlButtons();
+            addPlayerStyles(); // Asegurarse de que los estilos de 'busted' existan
+        }
+
+        function updateGameStateDisplay() {
+            const display = document.getElementById('gameStateDisplay');
+            display.className = `game-state-${gameState}`;
+
+            const stateNames = {
+                waiting: 'Esperando',
+                betting: 'Apostando',
+                playing: 'Jugando',
+                finished: 'Finalizado'
+            };
+
+            display.textContent = stateNames[gameState] || gameState;
+        }
+
+        function updateControlButtons() {
+            const startBettingBtn = document.getElementById('startBettingBtn');
+            const dealCardsBtn = document.getElementById('dealCardsBtn');
+
+            console.log(`Actualizando botones - Estado: ${gameState}, Jugadores: ${playersList.length}`);
+
+            // Botón iniciar apuestas
+            if (gameState === 'waiting' && playersList.length > 0) {
+                startBettingBtn.disabled = false;
+                startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
+                startBettingBtn.style.opacity = '1';
+            } else if (gameState === 'betting') {
+                startBettingBtn.disabled = true;
+                startBettingBtn.innerHTML = '<i class="fas fa-clock"></i> APOSTANDO...';
+                startBettingBtn.style.opacity = '0.6';
             } else {
-                throw new Error('Error en el servidor');
+                startBettingBtn.disabled = true;
+                startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
+                startBettingBtn.style.opacity = '0.6';
             }
-        } catch (error) {
-            console.error('Error al salir de la mesa:', error);
-            showNotification('Error al cerrar la sala. Redirigiendo...', 'warning');
-            
-            // Redirigir de todos modos después de un breve delay
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 2000);
+
+            // Botón repartir cartas
+            const allConfirmed = playersList.length > 0 && playersList.every(p => p.betConfirmed);
+            const dealerHasCards = document.getElementById('dealerCards').children.length > 0;
+
+            if (gameState === 'playing' && allConfirmed && !dealerHasCards) {
+                dealCardsBtn.disabled = false;
+                dealCardsBtn.style.opacity = '1';
+            } else {
+                dealCardsBtn.disabled = true;
+                dealCardsBtn.style.opacity = '0.6';
+            }
         }
-    }
-}
 
-// === MANEJO DE ERRORES Y RECONEXIÓN ===
+        function revealDealerCardAction() {
+            console.log('-> Emitiendo dealerRevealCard');
+            document.getElementById('revealCardBtn').disabled = true; // Deshabilitar para evitar clics múltiples
+            socket.emit('dealerRevealCard');
+        }
 
-// Manejar errores de conexión
-socket.on('connect_error', (error) => {
-    console.error('❌ Error de conexión:', error);
-    showNotification('Error de conexión al servidor', 'error');
-});
+        // === FUNCIONES DE TIMER ===
 
-// Manejar intentos de reconexión
-socket.on('reconnect_attempt', (attemptNumber) => {
-    console.log(`🔄 Intento de reconexión #${attemptNumber}`);
-    showNotification(`Reconectando... (${attemptNumber})`, 'info');
-});
+        function startBettingTimer(duration) {
+            const timerElement = document.getElementById('bettingTimer');
+            const displayElement = document.getElementById('timerDisplay');
+            const progressElement = document.getElementById('timerProgress');
 
-// Manejar reconexión exitosa
-socket.on('reconnect', (attemptNumber) => {
-    console.log(`✅ Reconectado después de ${attemptNumber} intentos`);
-    showNotification('Reconectado al servidor', 'success');
-    
-    // Volver a unirse a la sala
-    if (roomCode) {
-        socket.emit('joinRoom', roomCode);
-    }
-});
+            timerElement.style.display = 'block';
+            let timeLeft = duration;
 
-// === DEBUG Y DESARROLLO ===
+            // Actualización inicial
+            const seconds = Math.ceil(timeLeft / 1000);
+            displayElement.textContent = `${seconds}s`;
+            progressElement.style.width = '100%';
 
-// Función de debug para inspeccionar el estado
-function debugState() {
-    console.log('=== ESTADO ACTUAL ===');
-    console.log('roomCode:', roomCode);
-    console.log('gameState:', gameState);
-    console.log('playersList:', playersList);
-    console.log('socket.id:', socket.id);
-    console.log('socket.connected:', socket.connected);
-    console.log('===================');
-}
+            bettingTimer = setInterval(() => {
+                timeLeft -= 1000;
 
-// Hacer función debug disponible globalmente para testing
-window.debugState = debugState;
+                const seconds = Math.ceil(timeLeft / 1000);
+                displayElement.textContent = `${seconds}s`;
 
-// Logs adicionales para debugging
-console.log('🔧 Script del dealer cargado exitosamente');
-console.log('📋 Funciones disponibles globalmente: debugState()');
+                const progressPercent = Math.max(0, (timeLeft / duration) * 100);
+                progressElement.style.width = `${progressPercent}%`;
+
+                // Cambiar color cuando quedan pocos segundos
+                if (seconds <= 10) {
+                    displayElement.style.color = '#ff4757';
+                    progressElement.style.background = 'linear-gradient(90deg, #ff4757, #ff6b6b)';
+                }
+
+                if (timeLeft <= 0) {
+                    stopBettingTimer();
+                }
+            }, 1000);
+        }
+
+        function stopBettingTimer() {
+            if (bettingTimer) {
+                clearInterval(bettingTimer);
+                bettingTimer = null;
+            }
+
+            const timerElement = document.getElementById('bettingTimer');
+            const displayElement = document.getElementById('timerDisplay');
+            const progressElement = document.getElementById('timerProgress');
+
+            timerElement.style.display = 'none';
+
+            // Resetear estilos
+            displayElement.style.color = '#ff6b6b';
+            progressElement.style.background = 'linear-gradient(90deg, #ff6b6b, #ffa500)';
+        }
+
+        // === FUNCIONES DE CONTROL DEL JUEGO ===
+
+        function startBetting() {
+            console.log('🎯 Iniciando período de apuestas...');
+
+            if (playersList.length === 0) {
+                showNotification('No hay jugadores en la sala', 'warning');
+                return;
+            }
+
+            if (gameState !== 'waiting') {
+                showNotification('No se puede iniciar apuestas en este momento', 'warning');
+                return;
+            }
+
+            const duration = 30000; // 30 segundos
+            console.log('📡 Emitiendo evento startBetting con duración:', duration);
+
+            // Deshabilitar botón inmediatamente para evitar múltiples clics
+            const startBettingBtn = document.getElementById('startBettingBtn');
+            startBettingBtn.disabled = true;
+            startBettingBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> INICIANDO...';
+
+            socket.emit('startBetting', duration);
+
+            // Feedback visual inmediato
+            showNotification('Iniciando período de apuestas...', 'info');
+        }
+
+        function dealCards() {
+            console.log('🎰 Repartiendo cartas...');
+
+            const allConfirmed = playersList.every(p => p.betConfirmed);
+            if (!allConfirmed || playersList.length === 0) {
+                showNotification('No todos los jugadores han confirmado sus apuestas', 'warning');
+                return;
+            }
+
+            // Deshabilitar botón para evitar clics múltiples
+            document.getElementById('dealCardsBtn').disabled = true;
+
+            // Emitir evento al servidor para que reparta las cartas
+            socket.emit('dealCards');
+        }
+
+        function resetGame() {
+            if (confirm('¿Seguro que quieres reiniciar el juego? Esto limpiará todas las apuestas.')) {
+                console.log('🔄 Reiniciando juego...');
+
+                socket.emit('resetGame');
+                showNotification('Reiniciando juego...', 'info');
+
+                // Limpiar timer si está activo
+                stopBettingTimer();
+
+                // Resetear estado local
+                gameState = 'waiting';
+                updateGameStateDisplay();
+                updateControlButtons();
+            }
+        }
+
+        // === LÓGICA DE ANIMACIÓN DE CARTAS ===
+
+        socket.on('cardsDealt', (data) => {
+            console.log('🃏 Recibiendo cartas del servidor:', data);
+
+            // Limpiar manos actuales antes de repartir
+            document.getElementById('dealerCards').innerHTML = '';
+            document.querySelectorAll('.player-cards-hand').forEach(hand => {
+                hand.innerHTML = '';
+            });
+
+            // Aunque el dealer conoce su mano completa (data.dealer), para la animación
+            // inicial, debemos mostrar las cartas como las ven los jugadores.
+            // La mano real del dealer se renderiza al final de la animación.
+            const dealerHandForDisplay = [
+                { hidden: true }, // Primera carta oculta para la animación
+                { hidden: true }, // Segunda carta oculta para la animación
+                data.dealer[2]    // Tercera carta visible
+            ];
+            animateDealing(data.players, dealerHandForDisplay);
+        });
+
+        function createCardElement(card) {
+            const cardDiv = document.createElement('div');
+
+            if (card.hidden) {
+                cardDiv.className = 'card card-back';
+                return cardDiv;
+            }
+
+            // Usar la imagen de la carta como fondo
+            cardDiv.className = 'card';
+            cardDiv.style.backgroundImage = `url('/${card.src}')`;
+            // Opcional: puedes dejar el texto superpuesto si tu CSS lo permite
+            return cardDiv;
+        }
+
+        async function animateDealing(players, dealerHand) {
+            const deckElement = document.querySelector('.deck-pile');
+            if (!deckElement) return;
+
+            const deckRect = deckElement.getBoundingClientRect();
+            const playersWithBets = players.filter(p => playersList.find(pl => pl.id === p.id && pl.betConfirmed));
+
+            const dealSequence = [];
+
+            // Ronda 1: Jugadores -> Dealer
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] }));
+            dealSequence.push({ target: 'dealer', card: dealerHand[0] });
+
+            // Ronda 2: Jugadores -> Dealer
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] }));
+            dealSequence.push({ target: 'dealer', card: dealerHand[1] });
+
+            // Ronda 3: Jugadores -> Dealer
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] }));
+            dealSequence.push({ target: 'dealer', card: dealerHand[2] });
+
+
+            for (const deal of dealSequence) {
+                await dealOneCard(deal, deckRect);
+            }
+
+            // CORRECCIÓN: Después de la animación, el dealer debe renderizar su mano real.
+            // La animación muestra la segunda carta como oculta, pero el dealer ya conoce su valor.
+            // Aquí sincronizamos la vista con los datos reales que recibió.
+            const dealerHandContainer = document.getElementById('dealerCards');
+            dealerHandContainer.innerHTML = ''; // Limpiar la mano animada
+
+            dealerHand.forEach(cardData => {
+                const cardElement = createCardElement(cardData);
+                cardElement.style.position = 'absolute';
+                dealerHandContainer.appendChild(cardElement);
+            });
+
+            // Aplicar el efecto abanico a la mano real y final.
+            applyFanEffect();
+        }
+
+        function dealOneCard(deal, deckRect) {
+            return new Promise(resolve => {
+                let targetHandElement;
+                if (deal.target === 'player') {
+                    targetHandElement = document.querySelector(`.player-position[data-player-id="${deal.id}"] .player-cards-hand`);
+                } else {
+                    targetHandElement = document.getElementById('dealerCards');
+                }
+
+                if (!targetHandElement) {
+                    console.warn(`No se encontró el contenedor de mano para ${deal.target} ${deal.id || ''}`);
+                    return resolve();
+                }
+
+                const cardElement = createCardElement(deal.card);
+                cardElement.classList.add('dealing-animation');
+                cardElement.style.left = `${deckRect.left}px`;
+                cardElement.style.top = `${deckRect.top}px`;
+
+                document.body.appendChild(cardElement);
+
+                const targetRect = targetHandElement.getBoundingClientRect();
+                // Apuntar la animación al centro del contenedor de la mano para un aterrizaje suave.
+                // Restamos la mitad del ancho/alto de la carta para centrarla.
+                const cardWidth = 80;
+                const cardHeight = 120;
+                const targetX = targetRect.left + (targetRect.width / 2) - (cardWidth / 2);
+                const targetY = targetRect.top + (targetRect.height / 2) - (cardHeight / 2);
+
+                // Pequeño delay para que la transición se aplique correctamente
+                setTimeout(() => {
+                    cardElement.style.transform = `translate(${targetX - deckRect.left}px, ${targetY - deckRect.top}px) rotate(360deg)`;
+
+                    cardElement.addEventListener('transitionend', () => {
+                        cardElement.remove(); // Eliminar la carta animada
+                        const finalCard = createCardElement(deal.card);
+                        finalCard.style.position = 'absolute'; // Aseguramos que la carta final se pueda posicionar
+                        targetHandElement.appendChild(finalCard); // Añadir la carta final estática
+                        applyFanEffect(); // Re-aplicar el abanico en cada carta para un efecto progresivo
+                        resolve();
+                    }, { once: true });
+                }, 50);
+            });
+        }
+
+        // === FUNCIONES AUXILIARES ===
+
+        function applyFanEffect() {
+            const hands = document.querySelectorAll('.player-cards-hand, .dealer-hand');
+
+            hands.forEach(hand => {
+                hand.style.position = 'relative';
+
+                const cards = hand.querySelectorAll('.card');
+                const total = cards.length;
+                if (total === 0) return;
+
+                const maxAngle = 20; // Ángulo máximo de rotación
+                const horizontalSpread = window.innerWidth < 768 ? 20 : 30; // Separación de cartas responsive
+                const totalWidth = (total - 1) * horizontalSpread;
+
+                cards.forEach((card, index) => {
+                    const pivotIndex = (total - 1) / 2;
+                    let angle = 0;
+                    // Evitar división por cero si solo hay una carta
+                    if (total > 1 && pivotIndex > 0) {
+                        angle = (index - pivotIndex) * (maxAngle / pivotIndex);
+                    }
+                    const horizontalOffset = (index * horizontalSpread) - (totalWidth / 2);
+
+                    // Posicionar cada carta desde el centro del contenedor
+                    card.style.left = '50%';
+                    // El transform ahora incluye un ajuste para centrar la propia carta (-50% de su ancho)
+                    // y luego aplica el desplazamiento para el efecto abanico.
+                    card.style.transform = `translateX(calc(-50% + ${horizontalOffset}px)) rotate(${angle}deg)`;
+                });
+            });
+        }
+
+        function copyRoomCode() {
+            if (roomCode) {
+                navigator.clipboard.writeText(roomCode)
+                    .then(() => {
+                        showNotification('¡Código copiado al portapapeles!', 'success');
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar:', err);
+                        // Fallback para navegadores que no soportan clipboard API
+                        const textArea = document.createElement('textarea');
+                        textArea.value = roomCode;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            showNotification('¡Código copiado al portapapeles!', 'success');
+                        } catch (fallbackErr) {
+                            showNotification('Error al copiar código', 'error');
+                        }
+                        document.body.removeChild(textArea);
+                    });
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            // Remover notificaciones existentes
+            const existingNotifications = document.querySelectorAll('.notification');
+            existingNotifications.forEach(notification => notification.remove());
+
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+
+            document.body.appendChild(notification);
+
+            // Auto-remover después de 4 segundos
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 4000);
+
+            console.log(`📢 Notificación [${type.toUpperCase()}]: ${message}`);
+        }
+
+        // Función para salir de la sala 
+        async function exitRoom() {
+            if (confirm('¿Seguro que quieres cerrar la sala? Esto desconectará a todos los jugadores.')) {
+                try {
+                    showNotification('Cerrando sala...', 'info');
+
+                    // Intentar cerrar la sala en el servidor
+                    const response = await fetch('/salir-mesa', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ codigo: roomCode })
+                    });
+
+                    if (response.ok) {
+                        showNotification('Sala cerrada exitosamente', 'success');
+                        setTimeout(() => {
+                            window.location.href = '/';
+                        }, 1500);
+                    } else {
+                        throw new Error('Error en el servidor');
+                    }
+                } catch (error) {
+                    console.error('Error al salir de la mesa:', error);
+                    showNotification('Error al cerrar la sala. Redirigiendo...', 'warning');
+
+                    // Redirigir de todos modos después de un breve delay
+                    setTimeout(() => {
+                        window.location.href = '/';
+                    }, 2000);
+                }
+            }
+        }
+
+        // === MANEJO DE ERRORES Y RECONEXIÓN ===
+
+        // Manejar errores de conexión
+        socket.on('connect_error', (error) => {
+            console.error('❌ Error de conexión:', error);
+            showNotification('Error de conexión al servidor', 'error');
+        });
+
+        // Manejar intentos de reconexión
+        socket.on('reconnect_attempt', (attemptNumber) => {
+            console.log(`🔄 Intento de reconexión #${attemptNumber}`);
+            showNotification(`Reconectando... (${attemptNumber})`, 'info');
+        });
+
+        // Manejar reconexión exitosa
+        socket.on('reconnect', (attemptNumber) => {
+            console.log(`✅ Reconectado después de ${attemptNumber} intentos`);
+            showNotification('Reconectado al servidor', 'success');
+
+            // Volver a unirse a la sala
+            if (roomCode) {
+                socket.emit('joinRoom', roomCode);
+            }
+        });
+
+        // === DEBUG Y DESARROLLO ===
+
+        // Función de debug para inspeccionar el estado
+        function debugState() {
+            console.log('=== ESTADO ACTUAL ===');
+            console.log('roomCode:', roomCode);
+            console.log('gameState:', gameState);
+            console.log('playersList:', playersList);
+            console.log('socket.id:', socket.id);
+            console.log('socket.connected:', socket.connected);
+            console.log('===================');
+        }
+
+        // Hacer función debug disponible globalmente para testing
+        window.debugState = debugState;
+
+        // Logs adicionales para debugging
+        console.log('🔧 Script del dealer cargado exitosamente');
+        console.log('📋 Funciones disponibles globalmente: debugState()');
     </script>
-<body>
+</body>
 </html>

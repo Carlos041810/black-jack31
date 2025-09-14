@@ -32,6 +32,12 @@ body {
     align-items: center;
 }
 
+    .exit-btn {
+        padding: 8px 12px;
+        /* Botón más pequeño */
+        font-size: 0.8em;
+    }
+
 .exit-btn,
 .how-to-play {
     background: linear-gradient(45deg, #D4AF37, #F4E678);
@@ -133,7 +139,7 @@ body {
     text-align: center;
     order: 1;
     min-height: 150px;
-    margin-top: -150px;
+    margin-top: -50px;
     /* Asegura espacio vertical */
 }
 
@@ -356,18 +362,26 @@ text {
            EFECTOS DE CURVA PARA CARTAS
            ========================= */
 .curve-left {
-    transform: translateX(-50px) translateY(-25px) rotate(15deg);
+    transform: translateX(-50px) translateY(-125px) rotate(15deg);
     /* Mueve el jugador izquierdo más a la izquierda */
 }
 
 .curve-center {
-    transform: translateY(0px) rotate(0deg);
+    transform: translateY(-90px) rotate(0deg);
 }
 
 .curve-right {
-    transform: translateX(50px) translateY(-25px) rotate(-15deg);
+    transform: translateX(50px) translateY(-125px) rotate(-15deg);
     /* Mueve el jugador derecho más a la derecha */
 }
+
+/* Posiciones para 2 jugadores: apilados con flexbox */
+.player-cards.two-players {
+    flex-direction: column;
+    gap: 30px; /* Espacio vertical entre los dos jugadores */
+    margin-top: -80px; /* Sube a los jugadores para que no queden tan abajo */
+}
+
 
 /* =========================
            ÁREA DE APUESTAS
@@ -516,6 +530,27 @@ text {
     display: flex;
 }
 
+/* Estilos para la sección de invitación en el menú móvil */
+.mobile-invite-section {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    color: #D4AF37;
+}
+
+.mobile-invite-section button {
+    background: #D4AF37;
+    color: black;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 5px;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
 /* Desktop: se muestra todo normal */
 .desktop-only {
     display: inline-block;
@@ -624,7 +659,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -205px;
+        margin-top: -85px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
@@ -648,21 +683,21 @@ text {
     }
 
     .svg-container {
-        margin-top: -20px;
+        margin-top: -40px;
         /* Sube el texto decorativo */
     }
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-90px) translateX(10%) rotate(10deg);
+        transform: translateY(-120px) translateX(10%) rotate(10deg);
     }
 
     .curve-right {
-        transform: translateY(-90px) translateX(-10%) rotate(-10deg);
+        transform: translateY(-120px) translateX(-10%) rotate(-10deg);
     }
 
     .curve-center {
-        transform: translateY(90px);
+        transform: translateY(-10px);
         /* siempre más abajo */
     }
 }
@@ -716,21 +751,21 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -230px;
+        margin-top: -100px;
         gap: 30px;
     }
 
 
     .curve-left {
-        transform: translateY(-90px) translateX(-70px) rotate(10deg);
+        transform: translateY(-120px) translateX(-70px) rotate(10deg);
     }
 
     .curve-right {
-        transform: translateY(-90px) translateX(40%) rotate(-10deg);
+        transform: translateY(-120px) translateX(40%) rotate(-10deg);
     }
 
     .curve-center {
-        transform: translateY(90px);
+        transform: translateY(10px);
         /* siempre más abajo */
     }
 
@@ -784,7 +819,7 @@ text {
 
     .player-area {
         order: 2;
-        margin-top: -0px;
+        margin-top: -30px;
 
     }
 
@@ -792,7 +827,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -215px;
+        margin-top: -205px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
@@ -822,16 +857,15 @@ text {
 
     /* Sube más a los jugadores de los lados en pantallas medianas */
     .curve-left {
-        transform: translateY(-140px) translateX(50%);
+        transform: translateY(-120px) translateX(50%);
     }
 
     .curve-right {
-        transform: translateY(-140px) translateX(-50%);
+        transform: translateY(-120px) translateX(-50%);
     }
 
     .curve-center {
-        transform: translateY(-20px);
-        /* siempre más abajo */
+        transform: translateY(-40px);
     }
 }
 
@@ -893,4 +927,16 @@ text {
     color: white;
     text-decoration: none;
     cursor: pointer;
+}
+
+
+
+
+
+/* Ajuste para un solo jugador en pantallas angostas */
+@media (max-width: 768px) {
+    .single-player-layout .player-position.curve-center {
+        /* Sube al jugador para que no esté tan abajo */
+        transform: translateY(-100px);
+    }
 }

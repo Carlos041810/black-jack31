@@ -1,0 +1,32 @@
+<!-- HEADER REUTILIZABLE -->
+<header class="top-bar">
+    <div class="left-group">
+        <button class="exit-btn" onclick="exitRoom()">
+            <i class="fas fa-door-open"></i> EXIT ROOM
+        </button>
+        
+        <!-- Elementos específicos de la vista (ej. invite-section del dealer) -->
+        {{VIEW_SPECIFIC_DESKTOP_ELEMENTS}}
+
+        <div class="online-status">
+            <div class="status-icon"></div>
+            <span class="user-icon">👥</span>
+            <h2 id="contador">0</h2>
+        </div>
+    </div>
+
+    <button class="menu-toggle" id="menuToggle">
+        <i class="fas fa-bars"></i>
+    </button>
+
+    <nav class="mobile-menu" id="mobileMenu">
+        <button class="how-to-play">🔊 HOW TO PLAY</button>
+        <div class="mobile-invite-section">
+            <span id="mobileRoomCodeText"></span>
+            <button onclick="copyRoomCode()">COPIAR</button>
+        </div>
+    </nav>
+
+    <button class="how-to-play desktop-only">🔊 HOW TO PLAY</button>
+</header>
+<!-- FIN HEADER REUTILIZABLE -->

@@ -1,0 +1,172 @@
+/* =========================
+   ESTILOS COMUNES DEL HEADER
+   ========================= */
+
+.top-bar {
+    background: linear-gradient(90deg, #000, #1a1a1a);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 3px solid #D4AF37;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+.left-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.exit-btn,
+.how-to-play {
+    background: linear-gradient(45deg, #D4AF37, #F4E678);
+    color: black;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.exit-btn:hover,
+.how-to-play:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.4);
+}
+
+/* Estilos para la sección de invitación del dealer */
+.invite-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #D4AF37;
+    font-weight: bold;
+}
+
+#copyBtn {
+    background: #D4AF37;
+    color: black;
+    border: none;
+    padding: 5px 15px;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+/* Contador de jugadores online */
+.online-status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #D4AF37;
+}
+
+.status-icon {
+    width: 10px;
+    height: 10px;
+    background: #27ae60;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+.user-icon,
+.online-status .user-icon {
+    font-size: 1.5em;
+}
+
+#contador,
+.online-status #contador {
+    font-size: 1.5em;
+    color: #D4AF37;
+    font-weight: bold;
+}
+
+/* Menú de hamburguesa */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: #D4AF37;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+.mobile-menu {
+    display: none;
+}
+
+.desktop-only {
+    display: block;
+}
+
+/* Animación para el icono de status */
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* --- Media Queries para el Header --- */
+
+@media (max-width: 768px) {
+    .invite-section,
+    .desktop-only {
+        display: none;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .mobile-menu {
+        position: absolute;
+        top: 90%;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.95);
+        padding: 20px;
+        border-radius: 10px;
+        min-width: 200px;
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1100;
+    }
+
+    .mobile-menu.active {
+        display: flex;
+    }
+
+    .mobile-invite-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 8px 12px;
+        border-radius: 8px;
+        color: #D4AF37;
+    }
+
+    .mobile-invite-section button {
+        background: #D4AF37;
+        color: black;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 5px;
+        font-size: 0.9em;
+        font-weight: bold;
+    }
+}
+
+@media (max-width: 600px) {
+    .top-bar {
+        padding: 10px 10px;
+    }
+
+    .exit-btn {
+        padding: 8px 12px;
+        font-size: 0.8em;
+    }
+}

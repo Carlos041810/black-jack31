@@ -5,41 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/players.css">
 </head>
 
 <body>
-    <!-- HEADER -->
-    <header class="top-bar">
-        <div class="left-group">
-            <button class="exit-btn" onclick="exitRoom()">
-                <i class="fas fa-door-open"></i> EXIT ROOM
-            </button>
-            <!-- El contador de jugadores ahora está en el header -->
-            <div class="online-status">
-                <div class="status-icon"></div>
-                <span class="user-icon">👥</span>
-                <h2 id="contador">0</h2>
-            </div>
-        </div>
 
-        <div class="dealer-title">PLAYER VIEW</div>
+    <!-- El header reutilizable se insertará aquí desde el servidor -->
 
-        <!-- Botón Hamburguesa -->
-        <button class="menu-toggle" id="menuToggle">
-            <i class="fas fa-bars"></i>
-        </button>
 
-        <!-- Menú Oculto (en móviles) -->
-        <nav class="mobile-menu" id="mobileMenu">
-            <button class="how-to-play">🔊 HOW TO PLAY</button>
-            <button class="exit-btn" onclick="exitRoom()">EXIT</button>
-            <button>COPY INVITE</button>
-        </nav>
-
-        <!-- Botón normal en escritorio -->
-        <button class="how-to-play desktop-only">🔊 HOW TO PLAY</button>
-    </header>
 
     <!-- ÁREA DE JUEGO PRINCIPAL -->
     <div class="game-area">
@@ -140,6 +114,7 @@
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/header.js"></script>
     <script>
         // Variables globales
         window.socket = io();
@@ -163,24 +138,7 @@
             // Unirse a la sala
             if (roomCode && window.socket) {
                 window.socket.emit('joinRoom', roomCode, currentPlayerName);
-            }
-
-            // === MANEJO DEL MENÚ HAMBURGUESA ===
-            const menuToggle = document.getElementById('menuToggle');
-            const mobileMenu = document.getElementById('mobileMenu');
-
-            if (menuToggle && mobileMenu) {
-                menuToggle.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Evita que el evento de clic se propague al 'window'
-                    mobileMenu.classList.toggle('active');
-                });
-
-                // Listener para cerrar el menú si se hace clic fuera de él
-                window.addEventListener('click', (e) => {
-                    if (mobileMenu.classList.contains('active') && !mobileMenu.contains(e.target) && !menuToggle.contains(e.target)) {
-                        mobileMenu.classList.remove('active');
-                    }
-                });
+                setupRoomCodeDisplay();
             }
 
             // === EVENT LISTENERS PARA ACCIONES ===
@@ -535,6 +493,13 @@
 
         // === FUNCIONES DE RENDERIZADO ===
 
+        function setupRoomCodeDisplay() {
+            const mobileRoomCodeText = document.getElementById('mobileRoomCodeText');
+            if (mobileRoomCodeText) {
+                mobileRoomCodeText.textContent = `${roomCode}`;
+            }
+        }
+
         function renderPlayers(players, currentPlayerName) {
             const playerCardsContainer = document.getElementById('playerCards');
             playerCardsContainer.innerHTML = '';
@@ -544,59 +509,105 @@
                 return;
             }
 
-            // Reordenar jugadores para que el actual esté en el centro
-            const reorderedPlayers = [...players];
-            const currentPlayerOriginalIndex = reorderedPlayers.findIndex(p => p.name === currentPlayerName);
-
-            if (currentPlayerOriginalIndex > -1) {
-                const [currentPlayer] = reorderedPlayers.splice(currentPlayerOriginalIndex, 1);
-                const middleIndex = Math.floor(reorderedPlayers.length / 2);
-                reorderedPlayers.splice(middleIndex, 0, currentPlayer);
+            // Añadir clase específica para un solo jugador
+            if (players.length === 1) {
+                playerCardsContainer.classList.add('single-player-layout');
+            } else {
+                playerCardsContainer.classList.remove('single-player-layout');
             }
 
-            const centerIndex = reorderedPlayers.findIndex(p => p.name === currentPlayerName);
+            if (players.length === 2) {
+                // Caso especial para 2 jugadores: apilados y centrados con Flexbox
+                playerCardsContainer.classList.add('two-players');
 
-            reorderedPlayers.forEach((player, index) => {
-                const playerDiv = document.createElement('div');
-                let positionClass = '';
+                const currentPlayer = players.find(p => p.name === currentPlayerName);
+                const otherPlayer = players.find(p => p.name !== currentPlayerName);
 
-                if (index === centerIndex) {
-                    positionClass = 'curve-center';
-                } else if (centerIndex !== -1 && index < centerIndex) {
-                    positionClass = 'curve-left';
-                } else {
-                    positionClass = 'curve-right';
+                // Renderizar al otro jugador primero (arriba), luego al jugador actual (abajo)
+                [otherPlayer, currentPlayer].forEach((player) => {
+                    if (!player) return;
+
+                    const playerDiv = document.createElement('div');
+                    playerDiv.className = 'player-position'; // Sin clases de posicionamiento absoluto
+                    playerDiv.dataset.playerId = player.id;
+
+                    let betDisplay = '';
+                    let betStatusClass = '';
+
+                    if (player.betConfirmed && player.bet > 0) {
+                        betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
+                        betStatusClass = 'bet-confirmed';
+                    } else if (player.bet > 0) {
+                        betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
+                        betStatusClass = 'bet-pending';
+                    } else {
+                        betDisplay = ``;
+                        betStatusClass = 'no-bet';
+                    }
+
+                    playerDiv.innerHTML = `
+                        <div class="player-content">
+                            <div class="player-info-display">${player.name}</div>
+                            <div class="player-bet ${betStatusClass}">${betDisplay}</div>
+                            <div class="player-cards-hand"></div>
+                        </div>`;
+                    
+                    playerCardsContainer.appendChild(playerDiv);
+                });
+
+            } else {
+                // Lógica para 1 o más de 2 jugadores
+                playerCardsContainer.classList.remove('two-players');
+                const reorderedPlayers = [...players];
+                const currentPlayerOriginalIndex = reorderedPlayers.findIndex(p => p.name === currentPlayerName);
+
+                if (currentPlayerOriginalIndex > -1) {
+                    const [currentPlayer] = reorderedPlayers.splice(currentPlayerOriginalIndex, 1);
+                    const middleIndex = Math.floor(reorderedPlayers.length / 2);
+                    reorderedPlayers.splice(middleIndex, 0, currentPlayer);
                 }
 
-                playerDiv.className = `player-position ${positionClass}`;
-                playerDiv.dataset.playerId = player.id; // <-- IMPORTANTE para la animación
+                const centerIndex = reorderedPlayers.findIndex(p => p.name === currentPlayerName);
 
-                let betDisplay = '';
-                let betStatusClass = '';
+                reorderedPlayers.forEach((player, index) => {
+                    const playerDiv = document.createElement('div');
+                    let positionClass = '';
 
-                if (player.betConfirmed && player.bet > 0) {
-                    // Apuesta confirmada
-                    betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
-                    betStatusClass = 'bet-confirmed';
-                } else if (player.bet > 0) {
-                    // Apuesta pendiente
-                    betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
-                    betStatusClass = 'bet-pending';
-                } else {
-                    // Sin apuesta
-                    betDisplay = ``;
-                    betStatusClass = 'no-bet';
-                }
+                    if (index === centerIndex) {
+                        positionClass = 'curve-center';
+                    } else if (centerIndex !== -1 && index < centerIndex) {
+                        positionClass = 'curve-left';
+                    } else {
+                        positionClass = 'curve-right';
+                    }
 
-                playerDiv.innerHTML = `
-                    <div class="player-content">
-                        <div class="player-info-display">${player.name}</div>
-                        <div class="player-bet ${betStatusClass}">${betDisplay}</div>
-                        <div class="player-cards-hand"></div>
-                    </div>`;
-                
-                playerCardsContainer.appendChild(playerDiv);
-            });
+                    playerDiv.className = `player-position ${positionClass}`;
+                    playerDiv.dataset.playerId = player.id;
+
+                    let betDisplay = '';
+                    let betStatusClass = '';
+
+                    if (player.betConfirmed && player.bet > 0) {
+                        betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
+                        betStatusClass = 'bet-confirmed';
+                    } else if (player.bet > 0) {
+                        betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
+                        betStatusClass = 'bet-pending';
+                    } else {
+                        betDisplay = ``;
+                        betStatusClass = 'no-bet';
+                    }
+
+                    playerDiv.innerHTML = `
+                        <div class="player-content">
+                            <div class="player-info-display">${player.name}</div>
+                            <div class="player-bet ${betStatusClass}">${betDisplay}</div>
+                            <div class="player-cards-hand"></div>
+                        </div>`;
+                    
+                    playerCardsContainer.appendChild(playerDiv);
+                });
+            }
 
             // Agregar estilos si no existen
             addPlayerStyles();
@@ -1057,6 +1068,29 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
+        }
+
+        function copyRoomCode() {
+            if (roomCode) {
+                navigator.clipboard.writeText(roomCode)
+                    .then(() => {
+                        showNotification('¡Código copiado al portapapeles!', 'success');
+                    })
+                    .catch(err => {
+                        console.error('Error al copiar:', err);
+                        const textArea = document.createElement('textarea');
+                        textArea.value = roomCode;
+                        document.body.appendChild(textArea);
+                        textArea.select();
+                        try {
+                            document.execCommand('copy');
+                            showNotification('¡Código copiado al portapapeles!', 'success');
+                        } catch (fallbackErr) {
+                            showNotification('Error al copiar código', 'error');
+                        }
+                        document.body.removeChild(textArea);
+                    });
+            }
         }
 
         async function exitRoom() {
