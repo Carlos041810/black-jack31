@@ -4,7 +4,6 @@
     box-sizing: border-box;
 }
 
-
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(135deg, #0f4c3a 0%, #1e5f47 100%);
@@ -23,7 +22,6 @@ body {
     border-bottom: 3px solid #D4AF37;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
     position: relative;
-    /* Para que el menú móvil se posicione relativo a la barra */
 }
 
 .left-group {
@@ -139,7 +137,7 @@ body {
     text-align: center;
     order: 1;
     min-height: 150px;
-    margin-top: -50px;
+    margin-top: -10px;
     /* Asegura espacio vertical */
 }
 
@@ -149,8 +147,8 @@ body {
     flex-wrap: wrap;
     min-width: 250px;
     position: relative;
-    min-height: 120px;
-    border: 2px dashed rgba(255, 255, 255, 0.2);
+    min-height: 130px;
+    border: 2px dashed   rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     padding: 10px;
     background: rgba(0, 0, 0, 0.2);
@@ -288,9 +286,7 @@ text {
     align-self: flex-end;
 }
 
-/* =========================
-           PILA DE CARTAS (BARAJA)
-           ========================= */
+/*PILA DE CARTAS (BARAJA)*/
 .deck-pile {
     position: relative;
     width: 80px;
@@ -336,7 +332,6 @@ text {
     align-items: center;
     gap: 8px;
     padding: 0 12px 8px 12px;
-    /* Eliminamos el padding superior */
     border-radius: 8px;
 }
 
@@ -563,7 +558,9 @@ text {
            ========================= */
 .player-actions {
     position: fixed;
-    bottom: 50px;
+    bottom: 15%;
+    left: 50%;
+    transform: translateX(-50%);
     display: flex;
     gap: 15px;
     padding: 15px;
@@ -669,10 +666,7 @@ text {
         /* Se muestra en pantallas pequeñas */
     }
 
-    .dealer-hand {
-        min-height: 105px;
-        /* 10% menos de 120px */
-    }
+
 
     /* Reducción del 10% para cartas y pila */
     .card,
@@ -791,7 +785,7 @@ text {
         /* Permite que la altura se ajuste al contenido */
     }
         .player-actions {
-            margin-bottom: 40%;
+            margin-bottom: 15%;
     }
     .betting-modal-content {
         width: 90vw;
@@ -827,7 +821,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -205px;
+        margin-top: -305px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
@@ -837,10 +831,7 @@ text {
         /* Se muestra en pantallas pequeñas */
     }
 
-    .dealer-hand {
-        min-height: 105px;
-        /* 10% menos de 120px */
-    }
+
 
     /* Reducción del 10% para cartas y pila */
     .card,
@@ -939,4 +930,12 @@ text {
         /* Sube al jugador para que no esté tan abajo */
         transform: translateY(-100px);
     }
+}
+
+#mensajes span {
+    display: block;
+    margin-bottom: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    border-radius: 5px;
 }

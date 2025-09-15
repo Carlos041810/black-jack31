@@ -45,18 +45,7 @@
 
             <!-- Botones de control -->
             <div class="control-buttons">
-                <button id="startBettingBtn">
-                    <i class="fas fa-play"></i> INICIAR APUESTAS
-                </button>
-
-                <button id="dealCardsBtn" disabled>
-                    <i class="fas fa-layer-group"></i> REPARTIR CARTAS
-                </button>
-
-                <button id="revealCardBtn" style="display: none;">
-                    <i class="fas fa-eye"></i> MOSTRAR CARTA
-                </button>
-
+                <!-- Solo el botón de reiniciar se queda en el panel lateral -->
                 <button id="resetGameBtn">
                     <i class="fas fa-redo"></i> REINICIAR
                 </button>
@@ -125,7 +114,32 @@
                 <!-- Las cartas del dealer aparecerán aquí cuando se repartan -->
             </div>
         </div>
+
+        <!-- CONTENEDOR PRINCIPAL DE ACCIONES -->
+        <div class="main-action-container" id="mainActionContainer">
+            <button id="startBettingBtn" class="main-action-btn" style="display: none;"><i class="fas fa-play"></i> INICIAR APUESTAS</button>
+            <button id="dealCardsBtn" class="main-action-btn" style="display: none;"><i class="fas fa-layer-group"></i> REPARTIR CARTAS</button>
+            <button id="revealCardBtn" class="main-action-btn" style="display: none;"><i class="fas fa-eye"></i> MOSTRAR CARTA</button>
+        </div>
+
+        <!-- ÁREA DE ACCIONES DEL DEALER -->
+        <div class="dealer-actions" id="dealerActions" style="display: none;">
+            <button id="dealerHitBtn" class="action-btn hit">Pedir</button>
+            <button id="dealerStandBtn" class="action-btn stand">Plantarse</button>
+        </div>
     </div>
+
+    <!-- Modal de Fin de Ronda -->
+    <div id="endRoundModal" class="end-round-modal" style="display: none;">
+        <div class="end-round-modal-content">
+            <span class="close-button" onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
+            <h2 id="endRoundModalTitle">Ronda Finalizada</h2>
+            <div id="endRoundModalBody">
+                <!-- El contenido se generará dinámicamente -->
+            </div>
+        </div>
+    </div>
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/header.js"></script>
@@ -188,6 +202,8 @@
             document.getElementById('dealCardsBtn').addEventListener('click', dealCards);
             document.getElementById('revealCardBtn').addEventListener('click', revealDealerCardAction);
             document.getElementById('resetGameBtn').addEventListener('click', resetGame);
+            document.getElementById('dealerHitBtn').addEventListener('click', () => socket.emit('dealerHit'));
+            document.getElementById('dealerStandBtn').addEventListener('click', () => socket.emit('dealerStand'));
 
             // Controles del modal en móvil
             const openControlsBtn = document.getElementById('openControlsBtn');
@@ -307,10 +323,10 @@
                 showNotification('Tu turno. Revela tu carta.', 'info');
                 // Des-resaltar a todos los jugadores
                 highlightCurrentPlayer(null);
-                // Mostrar el botón para revelar la carta
+                // Ocultar el botón de repartir y mostrar el de revelar
+                document.getElementById('dealCardsBtn').style.display = 'none';
                 document.getElementById('revealCardBtn').style.display = 'inline-block';
                 document.getElementById('revealCardBtn').disabled = false; // Asegurarse de que esté habilitado
-                updateControlButtons();
             });
 
             // El dealer revela su carta
@@ -319,7 +335,7 @@
                 const dealerHandContainer = document.getElementById('dealerCards');
 
                 // Ocultar el botón una vez que la acción se completa
-                document.getElementById('revealCardBtn').style.display = 'none';
+                // La función revealDealerCardAction() ya se encarga de ocultarlo al hacer clic.
 
                 // Limpiar la mano actual (que contiene cartas ocultas)
                 dealerHandContainer.innerHTML = '';
@@ -335,6 +351,20 @@
                 applyFanEffect();
             });
 
+            // El dealer puede jugar (pedir/plantarse)
+            socket.on('dealerCanPlay', () => {
+                console.log('[DEALER ACTION] Mostrando botones de Pedir/Plantarse.');
+                document.getElementById('dealerActions').style.display = 'flex';
+            });
+
+            // El turno del dealer ha terminado (se plantó o se pasó)
+            socket.on('dealerTurnEnd', () => {
+                console.log('[DEALER ACTION] Ocultando botones de Pedir/Plantarse.');
+                const dealerActions = document.getElementById('dealerActions');
+                if (dealerActions) {
+                    dealerActions.style.display = 'none';
+                }
+            });
             // El dealer pide una carta (Hit)
             socket.on('dealerCardUpdate', (data) => {
                 console.log(`[DEALER HIT] Dealer recibe una carta.`);
@@ -401,6 +431,46 @@
 
                 // Insertar el display de puntuación al principio del contenedor
                 dealerHandContainer.appendChild(dealerScoreDisplay);
+
+                // Abrir el modal de fin de ronda después de un delay para ver los resultados en mesa
+                setTimeout(() => {
+                    const modal = document.getElementById('endRoundModal');
+                    const modalBody = document.getElementById('endRoundModalBody');
+
+                    // 1. Ordenar los resultados por puntuación (de mayor a menor)
+                    const sortedResults = [...data.results].sort((a, b) => {
+                        const scoreA = a.playerScore;
+                        const scoreB = b.playerScore;
+                        const aBusted = scoreA > 31;
+                        const bBusted = scoreB > 31;
+
+                        if (aBusted && !bBusted) return 1;
+                        if (!aBusted && bBusted) return -1;
+                        if (aBusted && bBusted) return scoreA - scoreB;
+                        return scoreB - scoreA;
+                    });
+
+                    // 2. Crear el HTML para la lista de puntuaciones
+                    let resultsHtml = `
+                        <div class="results-list">
+                            <div class="results-header"><span>Jugador</span><span>Puntuación</span></div>
+                            <div class="results-row dealer-row">
+                                <span>Dealer</span>
+                                <span>${data.dealerScore > 31 ? `Se pasó (${data.dealerScore})` : data.dealerScore}</span>
+                            </div>
+                        `;
+                    sortedResults.forEach(result => {
+                        resultsHtml += `
+                            <div class="results-row">
+                                <span>${result.playerName}</span>
+                                <span>${result.playerScore > 31 ? `Se pasó (${result.playerScore})` : result.playerScore}</span>
+                            </div>`;
+                    });
+                    resultsHtml += '</div><p class="waiting-next-round">Puedes reiniciar el juego cuando estés listo.</p>';
+
+                    modalBody.innerHTML = resultsHtml;
+                    modal.style.display = 'flex';
+                }, 4000); // 4 segundos de espera
             });
 
             // Errores
@@ -429,9 +499,16 @@
                     const overlay = div.querySelector('.result-overlay');
                     if (overlay) overlay.remove();
                 });
+                document.getElementById('startBettingBtn').style.display = 'none';
+                document.getElementById('dealCardsBtn').style.display = 'none';
                 document.getElementById('revealCardBtn').style.display = 'none';
                 document.getElementById('revealCardBtn').disabled = false; // Resetear para la siguiente ronda
                 // Remover puntuación del dealer
+                document.getElementById('dealerActions').style.display = 'none';
+                // Ocultar modal de fin de ronda si está abierto
+                const endRoundModal = document.getElementById('endRoundModal');
+                if (endRoundModal) endRoundModal.style.display = 'none';
+
                 const dealerScore = document.querySelector('.dealer-score-display');
                 if (dealerScore) dealerScore.remove();
                 stopBettingTimer();
@@ -573,6 +650,47 @@
             white-space: nowrap; /* Evita que el texto se parta en dos líneas */
             box-shadow: 0 2px 10px rgba(0,0,0,0.5);
         }
+
+        /* Estilos para el modal de fin de ronda (copiados de players.css) */
+        .end-round-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1500;
+        }
+        .end-round-modal-content {
+            background: rgba(10, 10, 10, 0.95);
+            padding: 40px; border-radius: 15px; border: 2px solid #D4AF37;
+            min-width: 400px; max-width: 90vw;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+            position: relative; overflow-y: auto;
+        }
+        .close-button {
+            color: #aaa; position: absolute; top: 10px; right: 20px;
+            font-size: 28px; font-weight: bold; cursor: pointer;
+        }
+        .close-button:hover { color: white; }
+
+        /* Estilos para la lista de resultados en el modal */
+        .results-list { width: 100%; margin-bottom: 20px; }
+        .results-header, .results-row {
+            display: flex; justify-content: space-between;
+            padding: 10px 15px; border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .results-header {
+            font-weight: bold; color: #D4AF37; background: rgba(255, 255, 255, 0.05);
+            border-top-left-radius: 8px; border-top-right-radius: 8px;
+        }
+        .results-row.dealer-row {
+            background: rgba(212, 175, 55, 0.1);
+            color: #FFD700;
+            font-weight: bold;
+        }
+        .results-row span:last-child { font-weight: bold; }
+        .waiting-next-round {
+            margin-top: 15px; color: #ccc; text-align: center;
+            font-style: italic;
+        }
     `;
             document.head.appendChild(style);
         }
@@ -626,40 +744,34 @@
         function updateControlButtons() {
             const startBettingBtn = document.getElementById('startBettingBtn');
             const dealCardsBtn = document.getElementById('dealCardsBtn');
+            const revealCardBtn = document.getElementById('revealCardBtn');
 
             console.log(`Actualizando botones - Estado: ${gameState}, Jugadores: ${playersList.length}`);
 
-            // Botón iniciar apuestas
+            // Ocultar todos los botones de acción principal por defecto
+            startBettingBtn.style.display = 'none';
+            dealCardsBtn.style.display = 'none';
+            // El botón de revelar se gestiona en su propio evento 'dealerTurn' para mayor precisión.
+
+            // Lógica para mostrar el botón correcto
+            // 1. Mostrar "Iniciar Apuestas" si estamos esperando y hay jugadores
             if (gameState === 'waiting' && playersList.length > 0) {
-                startBettingBtn.disabled = false;
-                startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
-                startBettingBtn.style.opacity = '1';
-            } else if (gameState === 'betting') {
-                startBettingBtn.disabled = true;
-                startBettingBtn.innerHTML = '<i class="fas fa-clock"></i> APOSTANDO...';
-                startBettingBtn.style.opacity = '0.6';
-            } else {
-                startBettingBtn.disabled = true;
-                startBettingBtn.innerHTML = '<i class="fas fa-play"></i> INICIAR APUESTAS';
-                startBettingBtn.style.opacity = '0.6';
+                startBettingBtn.style.display = 'inline-block';
+                return; // Salimos para no mostrar otro botón por error
             }
 
-            // Botón repartir cartas
+            // 2. Mostrar "Repartir Cartas" si estamos jugando, todos confirmaron y el dealer no tiene cartas
             const allConfirmed = playersList.length > 0 && playersList.every(p => p.betConfirmed);
             const dealerHasCards = document.getElementById('dealerCards').children.length > 0;
 
             if (gameState === 'playing' && allConfirmed && !dealerHasCards) {
-                dealCardsBtn.disabled = false;
-                dealCardsBtn.style.opacity = '1';
-            } else {
-                dealCardsBtn.disabled = true;
-                dealCardsBtn.style.opacity = '0.6';
+                dealCardsBtn.style.display = 'inline-block';
             }
         }
 
         function revealDealerCardAction() {
             console.log('-> Emitiendo dealerRevealCard');
-            document.getElementById('revealCardBtn').disabled = true; // Deshabilitar para evitar clics múltiples
+            document.getElementById('revealCardBtn').style.display = 'none'; // Ocultar al hacer clic
             socket.emit('dealerRevealCard');
         }
 
@@ -735,9 +847,7 @@
             console.log('📡 Emitiendo evento startBetting con duración:', duration);
 
             // Deshabilitar botón inmediatamente para evitar múltiples clics
-            const startBettingBtn = document.getElementById('startBettingBtn');
-            startBettingBtn.disabled = true;
-            startBettingBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> INICIANDO...';
+            document.getElementById('startBettingBtn').style.display = 'none';
 
             socket.emit('startBetting', duration);
 
@@ -754,8 +864,8 @@
                 return;
             }
 
-            // Deshabilitar botón para evitar clics múltiples
-            document.getElementById('dealCardsBtn').disabled = true;
+            // Ocultar botón para evitar clics múltiples
+            document.getElementById('dealCardsBtn').style.display = 'none';
 
             // Emitir evento al servidor para que reparta las cartas
             socket.emit('dealCards');

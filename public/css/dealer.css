@@ -299,12 +299,14 @@ body {
 }
 
 .dealer-area {
-    text-align: center;
-    padding: 30px;
     display: flex;
     justify-content: center;
     align-items: center;
     gap: 50px;
+    text-align: center;
+    order: 1;
+    min-height: 150px;
+    margin-top: -10px;
 }
 
 .dealer-hand {
@@ -312,7 +314,7 @@ body {
     justify-content: center;
     flex-wrap: wrap;
     min-width: 250px;
-    min-height: 120px;
+    min-height: 140px;
     border: 2px dashed rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     padding: 10px;
@@ -339,6 +341,9 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .card:hover {
@@ -352,6 +357,90 @@ body {
     border-radius: 10px;
 }
 
+/* ÁREA DE ACCIONES DEL DEALER */
+.dealer-actions {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 20px;
+    z-index: 100;
+    transition: all 0.3s ease;
+}
+
+.action-btn {
+    padding: 12px 25px;
+    font-size: 1em;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    min-width: 120px;
+    text-align: center;
+}
+
+.action-btn.hit {
+    background: linear-gradient(45deg, #27ae60, #2ecc71);
+    color: white;
+}
+
+.action-btn.stand {
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    color: white;
+}
+
+.action-btn:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+}
+
+.action-btn:disabled {
+    background: #555;
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* CONTENEDOR DE ACCIÓN PRINCIPAL */
+.main-action-container {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 15px;
+}
+
+.main-action-btn {
+    padding: 15px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    min-width: 220px;
+    text-align: center;
+    background: linear-gradient(45deg, #D4AF37, #F4E678);
+    color: black;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+}
+
+.main-action-btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 8px 25px rgba(212, 175, 55, 0.4);
+}
+
+.main-action-btn i {
+    margin-right: 10px;
+}
 /* Notificaciones */
 .notification {
     position: fixed;
@@ -475,6 +564,8 @@ body {
 
 /* Responsive */
 @media (max-width: 768px) {
+
+    
     .sidebar {
         width: 250px;
     }
@@ -555,14 +646,14 @@ body {
         height: auto;
         left: auto;
         right: 10px;
-        bottom: 100px;
-        /* Aumentado para dejar espacio al botón de abajo */
+        bottom: 170px; /* Posición original para estar sobre el botón de acción */
         top: auto;
         background: rgba(0, 0, 0, 0.95);
         border: 2px solid #D4AF37;
         border-radius: 15px;
         box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
         padding-top: 40px;
+        z-index: 1100; /* Asegura que esté por encima del botón de abrir (z-index: 1050) */
 
         /* 2. Lo ocultamos con opacidad y lo movemos ligeramente para la animación */
         opacity: 0;
@@ -611,5 +702,15 @@ body {
 
     .dealer-area {
         gap: 30px;
+    }
+
+    .dealer-actions {
+        width: 90%;
+        justify-content: center;
+        bottom: 0%; /* Posicionado al 85% desde arriba */
+    }
+
+    .main-action-container {
+        bottom: 180px; /* Ajuste para móvil pequeño */
     }
 }
