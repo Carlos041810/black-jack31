@@ -13,6 +13,12 @@
     <div id="notification-container"></div>
     <!-- El header reutilizable se insertará aquí desde el servidor -->
 
+    <!-- Animación de cartas flotantes -->
+    <div class="floating-cards card-1">♦</div>
+    <div class="floating-cards card-2">♠</div>
+    <div class="floating-cards card-3">♥</div>
+    <div class="floating-cards card-4">♣</div>
+
 
 
     <!-- ÁREA DE JUEGO PRINCIPAL -->
@@ -36,10 +42,10 @@
         <div class="svg-container">
             <svg viewBox="0 0 1000 400" style="width: 100%; height: 300px;">
                 <defs>
-                    <!-- Curvas alineadas -->
-                    <path id="curve-top" d="M 150 150 Q 500 220 850 150" />
-                    <path id="curve-bottom" d="M 150 200 Q 500 270 850 200" />
-                    <path id="curve-middle" d="M 130 208 Q 500 278 870 208" />
+                    <!-- Curvas corregidas para que el texto no se corte -->
+                    <path id="curve-top" d="M 100 150 Q 500 220 900 150" />
+                    <path id="curve-bottom" d="M 100 200 Q 500 270 900 200" />
+                    <path id="curve-middle" d="M 100 213 Q 500 283 900 213" />
 
                     <!-- Efectos de sombra -->
                     <filter id="shadow">
@@ -84,10 +90,10 @@
                 <div>Total Bet<br><span id="totalBet">$0</span></div>
             </div>
             <div class="chips">
-                <div class="chip chip-10" onclick="placeBet(10)">$10</div>
-                <div class="chip chip-25" onclick="placeBet(25)">$25</div>
-                <div class="chip chip-50" onclick="placeBet(50)">$50</div>
-                <div class="chip chip-100" onclick="placeBet(100)">$100</div>
+                <img src="/img/10-chip.png" class="chip" alt="Ficha de 10" onclick="placeBet(10)">
+                <img src="/img/25-chip.png" class="chip" alt="Ficha de 25" onclick="placeBet(25)">
+                <img src="/img/50-chip.png" class="chip" alt="Ficha de 50" onclick="placeBet(50)">
+                <img src="/img/100-chip.png" class="chip" alt="Ficha de 100" onclick="placeBet(100)">
             </div>
             <div class="betting-buttons">
                 <button onclick="clearBet()">CLEAR</button>
@@ -196,8 +202,8 @@
 
             // Jugador confirmó apuesta
             window.socket.on('playerBetConfirmed', (data) => {
-                console.log(`${data.playerName} confirmó apuesta de ${data.bet}`);
-                showNotification(`${data.playerName} confirmó apuesta de ${data.bet}`);
+                console.log(`${data.playerName} confirmó apuesta de ${data.bet}$`);
+                showNotification(`${data.playerName} confirmó apuesta de ${data.bet}$`);
             });
 
             // Iniciar juego
@@ -534,14 +540,12 @@
                     let betDisplay = '';
                     let betStatusClass = '';
 
-                    if (player.betConfirmed && player.bet > 0) {
-                        betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
-                        betStatusClass = 'bet-confirmed';
-                    } else if (player.bet > 0) {
-                        betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
-                        betStatusClass = 'bet-pending';
+                    if (player.bet > 0) {
+                        const chipStack = getChipStackHtml(player.bet);
+                        betStatusClass = player.betConfirmed ? 'bet-confirmed' : 'bet-pending';
+                        betDisplay = `${chipStack}`;
                     } else {
-                        betDisplay = ``;
+                        betDisplay = ``; // No mostrar nada si no hay apuesta
                         betStatusClass = 'no-bet';
                     }
 
@@ -587,14 +591,12 @@
                     let betDisplay = '';
                     let betStatusClass = '';
 
-                    if (player.betConfirmed && player.bet > 0) {
-                        betDisplay = `<div class="bet-confirmed-icon">${player.bet}</div>`;
-                        betStatusClass = 'bet-confirmed';
-                    } else if (player.bet > 0) {
-                        betDisplay = `<div class="bet-pending">${player.bet} (Pendiente)</div>`;
-                        betStatusClass = 'bet-pending';
+                    if (player.bet > 0) {
+                        const chipStack = getChipStackHtml(player.bet);
+                        betStatusClass = player.betConfirmed ? 'bet-confirmed' : 'bet-pending';
+                        betDisplay = `${chipStack}`;
                     } else {
-                        betDisplay = ``;
+                        betDisplay = ``; // No mostrar nada si no hay apuesta
                         betStatusClass = 'no-bet';
                     }
 
@@ -618,6 +620,29 @@
                 const style = document.createElement('style');
                 style.id = 'player-bet-styles';
                 style.innerHTML = `
+                    .player-bet .chip-stack {
+                        position: relative;
+                        display: inline-block;
+                        width: 30px;
+                        height: 40px; /* Espacio para la pila */
+                        vertical-align: middle;
+                        margin-right: 5px;
+                    }
+                    .player-bet .stacked-chip {
+                        position: absolute;
+                        bottom: 0;
+                        left: 0;
+                        width: 30px;
+                        height: 30px;
+                        transition: transform 0.2s;
+                    }
+                    .player-bet .bet-total-text {
+                        vertical-align: middle;
+                    }
+                    .player-bet.bet-confirmed .bet-total-text { color: #27ae60; }
+                    .player-bet.bet-pending .bet-total-text { color: #f39c12; }
+
+
                     #notification-container {
                         position: fixed;
                         top: 20px;
@@ -890,6 +915,30 @@
         }
 
         // === LÓGICA DE ANIMACIÓN DE CARTAS (IDÉNTICA A LA DEL DEALER) ===
+
+        function getChipStackHtml(bet) {
+            if (bet <= 0) return '';
+
+            let chipStackHtml = '<div class="chip-stack">';
+            let tempBet = bet;
+            const chipDenominations = [100, 50, 25, 10];
+            let zIndex = 1;
+            let offset = 0;
+            const maxChipsPerStack = 5; // Para evitar pilas demasiado altas
+
+            for (const denomination of chipDenominations) {
+                let count = Math.floor(tempBet / denomination);
+                count = Math.min(count, maxChipsPerStack); // Limitar chips por denominación
+                for (let i = 0; i < count; i++) {
+                    chipStackHtml += `<img src="/img/${denomination}-chip.png" class="stacked-chip" style="z-index: ${zIndex}; transform: translateY(-${offset}px);" alt="${denomination}$">`;
+                    zIndex++;
+                    offset += 4; // Pequeño desplazamiento para cada ficha
+                }
+                tempBet -= count * denomination;
+            }
+            chipStackHtml += '</div>';
+            return chipStackHtml;
+        }
 
         function createCardElement(card) {
             const cardDiv = document.createElement('div');

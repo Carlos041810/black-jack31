@@ -143,15 +143,15 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        background: rgba(255, 255, 255, 0.1);
+        background: black;
         padding: 8px 12px;
         border-radius: 8px;
         color: #D4AF37;
     }
 
     .mobile-invite-section button {
-        background: #D4AF37;
-        color: black;
+        background:rgba(106, 105, 105, 0.839);
+        color: rgb(165, 165, 165);
         border: none;
         padding: 6px 12px;
         border-radius: 5px;

@@ -24,13 +24,12 @@
         .login-container {
             width: 90%;
             max-width: 1000px;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.527);
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px 60px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
                 0 0 40px rgba(212, 175, 55, 0.2);
-            border: 2px solid rgba(212, 175, 55, 0.3);
             text-align: center;
             animation: fadeInUp 1s ease-out;
         }
@@ -113,7 +112,7 @@
         .option-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3);
-            border-color: #d4af37;
+            border-color: #564714;
         }
 
         .option-icon {
@@ -151,15 +150,15 @@
 
         .option-button:hover {
             transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(212, 175, 55, 0.4);
+            box-shadow: 0 10px 30px rgba(78, 64, 19, 0.4);
         }
 
         .dealer-card .option-button {
-            background: linear-gradient(45deg, #ffd700, #ffed4a);
+            background: #F6AD55;
         }
 
         .player-card .option-button {
-            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            background: #38A169;
             color: white;
         }
 

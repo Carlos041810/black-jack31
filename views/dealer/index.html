@@ -8,11 +8,18 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/dealer.css">
+
 </head>
 
 <body>
 
     <!-- El header reutilizable se insertará aquí desde el servidor -->
+
+    <!-- Animación de cartas flotantes -->
+    <div class="floating-cards card-1">♦</div>
+    <div class="floating-cards card-2">♠</div>
+    <div class="floating-cards card-3">♥</div>
+    <div class="floating-cards card-4">♣</div>
 
 
 
@@ -75,9 +82,9 @@
         <div class="svg-container">
             <svg viewBox="0 0 1000 400" style="width: 100%; height: 300px;">
                 <defs>
-                    <path id="curve-top" d="M 150 150 Q 500 220 850 150" />
-                    <path id="curve-bottom" d="M 150 200 Q 500 270 850 200" />
-                    <path id="curve-middle" d="M 130 208 Q 500 278 870 208" />
+                    <path id="curve-top" d="M 100 150 Q 500 220 900 150" />
+                    <path id="curve-bottom" d="M 100 200 Q 500 270 900 200" />
+                    <path id="curve-middle" d="M 100 213 Q 500 283 900 213" />
                     <filter id="shadow">
                         <feDropShadow dx="3" dy="3" stdDeviation="3" flood-color="#000" flood-opacity="0.5" />
                     </filter>
@@ -270,7 +277,7 @@
             // Jugador confirmó apuesta
             socket.on('playerBetConfirmed', (data) => {
                 console.log('✅ Jugador confirmó apuesta:', data);
-                showNotification(`${data.playerName} confirmó $${data.bet}`, 'success');
+                showNotification(`${data.playerName} confirmó ${data.bet}$`, 'success');
                 updateGameStatus();
 
                 // Verificar si todos confirmaron
@@ -393,22 +400,16 @@
 
                 data.results.forEach(result => {
                     const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
+                    const playerCards = playerDiv ? playerDiv.querySelectorAll('.player-cards-hand .card') : [];
+
                     if (playerDiv) {
-                        // Crear un div para el resultado
-                        const resultOverlay = document.createElement('div');
-                        resultOverlay.className = `result-overlay result-${result.outcome.toLowerCase()}`;
-
-                        resultOverlay.innerHTML = `
-                    <div class="outcome-text">${result.outcome}</div>
-                    <div class="score-text">Puntos: ${result.playerScore}</div>
-                `;
-
-                        playerDiv.appendChild(resultOverlay);
-
-                        // Actualizar el balance en la vista del dealer
-                        const balanceDisplay = playerDiv.querySelector('.player-balance');
-                        if (balanceDisplay) {
-                            balanceDisplay.textContent = `Balance: $${result.newBalance}`;
+                        // Aplicar clases a los bordes de las cartas según el resultado
+                        if (result.outcome === 'WIN' || result.outcome === 'BLACKJACK') {
+                            playerCards.forEach(c => c.classList.add('card-win-border'));
+                        } else if (result.outcome === 'LOSE') {
+                            playerCards.forEach(c => c.classList.add('card-lose-border'));
+                        } else if (result.outcome === 'PUSH') {
+                            playerCards.forEach(c => c.classList.add('card-push-border'));
                         }
                     }
                 });
@@ -545,15 +546,12 @@
                 let betDisplay = '';
                 let floatingBetHtml = '';
 
-                if (player.betConfirmed && player.bet > 0) {
-                    floatingBetHtml = `<div class="confirmed-bet-floater">$${player.bet}</div>`;
-                    betDisplay = `
-                <div class="bet-confirmed-icon">
-                    <i class="fas fa-check-circle"></i> 
-                    <span>Confirmado</span>
-                </div>`;
-                } else if (player.bet > 0) {
-                    betDisplay = `<div class="bet-pending">$${player.bet} (Esperando)</div>`;
+                if (player.bet > 0) {
+                    const chipStack = getChipStackHtml(player.bet);
+                    const statusClass = player.betConfirmed ? 'bet-confirmed-icon' : 'bet-pending';
+                    const statusText = player.betConfirmed ? '' : ' (Esperando)';
+                    betDisplay = `<div class="${statusClass}">${chipStack} <span class="bet-total-text">${player.bet}$${statusText}</span></div>`;
+                    betDisplay = `<div class="${statusClass}">${chipStack}</div>`;
                 } else {
                     betDisplay = `<div class="no-bet">Sin apuesta</div>`;
                 }
@@ -561,7 +559,6 @@
                 playerDiv.innerHTML = `
             <div class="player-header">
                 <div class="player-name-display">${player.name}</div>
-                <div class="player-balance">$${player.balance || 100}</div>
             </div>
             <div class="player-cards-hand">
                 <div class="card-slot">Esperando cartas...</div>
@@ -576,8 +573,39 @@
         function addPlayerStyles() {
             if (document.getElementById('dealer-player-styles')) return;
             const style = document.createElement('style');
-            style.id = 'dealer-player-styles';
+            style.id = 'dealer-player-styles'; // ID corregido para evitar duplicados
             style.innerHTML = `
+        .player-bet .chip-stack {
+            position: relative;
+            display: inline-block;
+            width: 30px;
+            height: 40px; /* Espacio para la pila */
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        .player-bet .stacked-chip {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 30px;
+            height: 30px;
+            transition: transform 0.2s;
+        }
+        .bet-total-text {
+            vertical-align: middle;
+        }
+        .bet-confirmed-icon, .bet-pending {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .bet-confirmed-icon {
+            color: #27ae60;
+        }
+        .bet-pending {
+            color: #f39c12;
+            animation: blink 1.5s infinite;
+        }
         .player-position.busted {
             background: rgba(192, 57, 43, 0.4);
             border-color: #e74c3c;
@@ -637,6 +665,18 @@
         .result-overlay.result-win, .result-overlay.result-blackjack { background: rgba(39, 174, 96, 0.7); }
         .result-overlay.result-lose { background: rgba(192, 57, 43, 0.7); }
         .result-overlay.result-push { background: rgba(44, 62, 80, 0.7); }
+
+        /* Estilos para los bordes de las cartas de resultado */
+        .card.card-win-border {
+            border: 4px solid #2ecc71 !important; box-shadow: 0 0 15px rgba(46, 204, 113, 0.9) !important;
+        }
+        .card.card-lose-border {
+            border: 4px solid #e74c3c !important; box-shadow: 0 0 15px rgba(231, 76, 60, 0.9) !important;
+        }
+        .card.card-push-border {
+            border: 4px solid #95a5a6 !important; box-shadow: 0 0 15px rgba(149, 165, 166, 0.9) !important;
+        }
+
         .dealer-score-display {
             position: absolute; /* Posición relativa al contenedor de la mano */
             bottom: -40px;      /* Lo posicionamos 40px por debajo del contenedor */
@@ -653,17 +693,27 @@
 
         /* Estilos para el modal de fin de ronda (copiados de players.css) */
         .end-round-modal {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            display: flex; align-items: center; justify-content: center;
-            z-index: 1500;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: rgba(0, 0, 0, 0.85) !important;
+            z-index: 1500 !important;
         }
         .end-round-modal-content {
-            background: rgba(10, 10, 10, 0.95);
-            padding: 40px; border-radius: 15px; border: 2px solid #D4AF37;
-            min-width: 400px; max-width: 90vw;
-            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
-            position: relative; overflow-y: auto;
+            background: rgba(10, 10, 10, 0.95) !important;
+            padding: 40px !important; border-radius: 15px !important; border: 2px solid #D4AF37 !important;
+            min-width: 400px !important; max-width: 90vw !important;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3) !important;
+            position: relative !important; overflow-y: auto !important;
+            margin: 0 !important;
+            transform: none !important;
         }
         .close-button {
             color: #aaa; position: absolute; top: 10px; right: 20px;
@@ -965,6 +1015,30 @@
 
             // Aplicar el efecto abanico a la mano real y final.
             applyFanEffect();
+        }
+
+        function getChipStackHtml(bet) {
+            if (bet <= 0) return '';
+
+            let chipStackHtml = '<div class="chip-stack">';
+            let tempBet = bet;
+            const chipDenominations = [100, 50, 25, 10];
+            let zIndex = 1;
+            let offset = 0;
+            const maxChipsPerStack = 5; // Para evitar pilas demasiado altas
+
+            for (const denomination of chipDenominations) {
+                let count = Math.floor(tempBet / denomination);
+                count = Math.min(count, maxChipsPerStack); // Limitar chips por denominación
+                for (let i = 0; i < count; i++) {
+                    chipStackHtml += `<img src="/img/${denomination}-chip.png" class="stacked-chip" style="z-index: ${zIndex}; transform: translateY(-${offset}px);" alt="${denomination}$">`;
+                    zIndex++;
+                    offset += 4; // Pequeño desplazamiento para cada ficha
+                }
+                tempBet -= count * denomination;
+            }
+            chipStackHtml += '</div>';
+            return chipStackHtml;
         }
 
         function dealOneCard(deal, deckRect) {
