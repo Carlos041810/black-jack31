@@ -139,8 +139,8 @@
     <!-- Modal de Fin de Ronda -->
     <div id="endRoundModal" class="end-round-modal" style="display: none;">
         <div class="end-round-modal-content">
-            <span class="close-button" onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
             <h2 id="endRoundModalTitle">Ronda Finalizada</h2>
+            <span class="close-button" onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
             <div id="endRoundModalBody">
                 <!-- El contenido se generará dinámicamente -->
             </div>
@@ -471,7 +471,7 @@
 
                     modalBody.innerHTML = resultsHtml;
                     modal.style.display = 'flex';
-                }, 4000); // 4 segundos de espera
+                }, 3000); // 3 segundos de espera
             });
 
             // Errores
@@ -698,14 +698,13 @@
             left: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            display: flex !important;
+            /* display: flex se controla con JS, no debe estar aquí con !important */
             align-items: center !important;
             justify-content: center !important;
             background: rgba(0, 0, 0, 0.85) !important;
             z-index: 1500 !important;
         }
+
         .end-round-modal-content {
             background: rgba(10, 10, 10, 0.95) !important;
             padding: 40px !important; border-radius: 15px !important; border: 2px solid #D4AF37 !important;
@@ -717,7 +716,7 @@
         }
         .close-button {
             color: #aaa; position: absolute; top: 10px; right: 20px;
-            font-size: 28px; font-weight: bold; cursor: pointer;
+            font-size: 28px; font-weight: bold; cursor: pointer; z-index: 10;
         }
         .close-button:hover { color: white; }
 
