@@ -374,7 +374,7 @@ text {
 .player-cards.two-players {
     flex-direction: column;
     gap: 30px; /* Espacio vertical entre los dos jugadores */
-    margin-top: -80px; /* Sube a los jugadores para que no queden tan abajo */
+    margin-top: -120px; /* Sube a los jugadores para que no queden tan abajo */
 }
 
 
@@ -784,9 +784,6 @@ text {
         min-height: auto;
         /* Permite que la altura se ajuste al contenido */
     }
-        .player-actions {
-            margin-bottom: 15%;
-    }
     .betting-modal-content {
         width: 90vw;
         /* Limita el ancho al 90% de la pantalla */
@@ -794,6 +791,14 @@ text {
         /* Reduce el padding lateral */
         margin: 0 auto;
         /* Asegura el centrado horizontal */
+    }
+    .player-actions {
+        position: relative; /* Cambiamos de 'fixed' a 'relative' */
+        bottom: auto;
+        left: auto;
+        transform: none;
+        margin-top: -200px; /* Ajustamos para subirlo y que quede bajo las cartas */
+        padding-bottom: 20px; /* Añadimos espacio inferior */
     }
 
     .player-cards {
@@ -821,7 +826,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -305px;
+        margin-top: -210px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }

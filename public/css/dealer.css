@@ -132,6 +132,9 @@ body {
     margin-left: 300px;
     padding: 30px;
     min-height: calc(100vh - 80px);
+    margin-left: -10px;
+
+    
 }
 
 .player-area {
@@ -179,12 +182,12 @@ body {
 .player-position {
     position: relative;
     background: rgba(0, 0, 0, 0.6);
-    border: 2px solid rgba(212, 175, 55, 0.3);
     border-radius: 15px;
     padding: 15px;
     min-width: 180px;
     max-width: 240px;
     transition: all 0.3s;
+    margin-top: -80px;
 }
 
 .player-position:hover {
@@ -296,6 +299,7 @@ body {
 .svg-container {
     margin: 40px 0;
     text-align: center;
+    margin-top: -120px;
 }
 
 .dealer-area {
@@ -306,7 +310,7 @@ body {
     text-align: center;
     order: 1;
     min-height: 150px;
-    margin-top: -10px;
+    margin-top: -100px;
 }
 
 .dealer-hand {
@@ -593,22 +597,28 @@ body {
     /* 1 jugador: centrado */
     .player-cards .player-position:only-child {
         grid-column: 1 / -1;
-        /* Ocupa toda la fila */
+        margin-top: 0px;
     }
 
     /* 2 jugadores: uno al lado del otro */
     .player-cards .player-position:nth-child(1):nth-last-child(2) {
         grid-column: 1;
+                margin-top: 0px;
+
     }
 
     .player-cards .player-position:nth-child(2):nth-last-child(1) {
         grid-column: 2;
+                margin-top: 0px;
+
     }
 
     /* 3 jugadores: diseño de triángulo */
     .player-cards .player-position:nth-child(1):nth-last-child(3) {
         grid-column: 1 / -1;
         /* El primero ocupa toda la fila superior */
+                margin-top: 0px;
+
     }
 
     .player-position {
@@ -707,7 +717,7 @@ body {
     .dealer-actions {
         width: 90%;
         justify-content: center;
-        bottom: 0%; /* Posicionado al 85% desde arriba */
+        bottom: 100px; /* Alineado con el botón de abrir controles */
     }
 
     .main-action-container {

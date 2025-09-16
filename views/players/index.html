@@ -974,10 +974,13 @@
                         if (playerDiv && (playerDiv.classList.contains('curve-left') || playerDiv.classList.contains('curve-right'))) {
                             isSidePlayer = true;
                         }
+                        // Añadir lógica para 2 jugadores: si el jugador no soy yo, es un "jugador lateral" para la animación.
+                        if (playersList.length === 2 && deal.id !== window.socket.id) {
+                            isSidePlayer = true;
+                        }
                     }
 
                     let finalTransform = `translate(${targetX - deckRect.left}px, ${targetY - deckRect.top}px) rotate(360deg)`;
-                    // Si es un jugador lateral, la animación termina con la carta encogiéndose
                     if (isSidePlayer) {
                         finalTransform += ' scale(0.1)';
                     }
@@ -985,7 +988,7 @@
 
                     cardElement.addEventListener('transitionend', () => {
                         cardElement.remove(); // Eliminar la carta animada
-                        // Solo añadir la carta estática si no es un jugador lateral
+                        // Solo añadir la carta estática si NO es un jugador lateral
                         if (!isSidePlayer) {
                             const finalCard = createCardElement(deal.card);
                             finalCard.style.position = 'absolute';
