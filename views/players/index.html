@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blackjack Online -Player</title>
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/players.css">
@@ -111,7 +113,8 @@
     <!-- Modal de Fin de Ronda -->
     <div id="endRoundModal" class="end-round-modal" style="display: none;">
         <div class="end-round-modal-content">
-            <span class="close-button" onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
+            <span class="close-button"
+                onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
             <h2 id="endRoundModalTitle">Ronda Finalizada</h2>
             <div id="endRoundModalBody">
                 <p>Esperando que el dealer inicie la siguiente ronda.</p>
@@ -124,7 +127,7 @@
     <script>
         // Variables globales
         window.socket = io();
-        let currentBalance = 100; 
+        let currentBalance = 100;
         let currentBet = 0;
         let betConfirmed = false;
         let gameState = 'waiting';
@@ -179,13 +182,68 @@
                 }
             });
 
+            // --- MANEJADOR DE RECONEXIÓN ---
+            window.socket.on('reconnectState', (data) => {
+                console.log('🔄 Recibido estado de reconexión:', data);
+                gameState = data.gameState;
+                playersList = data.players;
+                
+                // Restaurar estado personal
+                currentBalance = data.balance;
+                currentBet = data.bet;
+                betConfirmed = data.betConfirmed;
+
+                // Actualizar toda la UI
+                updateBetDisplay();
+                updateBettingControls();
+                renderPlayers(data.players, currentPlayerName);
+
+                // Si ya hay cartas, renderizarlas también
+                if (data.hand && data.hand.length > 0) {
+                    console.log('Restaurando manos en la mesa...');
+                    // Limpiar manos y puntuaciones previas
+                    document.getElementById('dealerCards').innerHTML = '';
+                    document.querySelectorAll('.player-cards-hand').forEach(hand => hand.innerHTML = '');
+                    document.querySelectorAll('.player-score').forEach(score => score.style.display = 'none');
+
+                    // Renderizar la mano del dealer
+                    // Si el juego está en 'playing', la mano del dealer puede estar parcialmente oculta.
+                    const dealerHandContainer = document.getElementById('dealerCards');
+                    const dealerHandToShow = (gameState === 'playing' && data.dealerHand.length > 1)
+                        ? [{ hidden: true }, { hidden: true }, data.dealerHand[2]]
+                        : data.dealerHand;
+
+                    dealerHandToShow.forEach(cardData => {
+                        const cardElement = createCardElement(cardData);
+                        cardElement.style.position = 'absolute';
+                        dealerHandContainer.appendChild(cardElement);
+                    });
+
+                    // Renderizar las manos de todos los jugadores
+                    data.players.forEach(player => {
+                        if (player.hand && player.hand.length > 0) {
+                            const playerHandContainer = document.querySelector(`.player-position[data-player-id="${player.id}"] .player-cards-hand`);
+                            if (playerHandContainer) {
+                                player.hand.forEach(cardData => {
+                                    const cardElement = createCardElement(cardData);
+                                    cardElement.style.position = 'absolute';
+                                    playerHandContainer.appendChild(cardElement);
+                                });
+                            }
+                        }
+                    });
+
+                    applyFanEffect(); // Aplicar el efecto abanico a todas las manos renderizadas
+                }
+            });
+
             // Estado del juego actualizado
             window.socket.on('gameStateUpdate', (data) => {
                 gameState = data.state;
                 console.log('Estado del juego:', gameState);
-                
+
                 // Mostrar/ocultar área de apuestas según el estado
-                    if (gameState === 'betting') {
+                if (gameState === 'betting') {
                     bettingArea.style.display = 'flex';
                 } else {
                     bettingArea.style.display = 'none';
@@ -260,6 +318,11 @@
                 const dealerScore = document.querySelector('.dealer-score-display');
                 if (dealerScore) dealerScore.remove();
                 if (turnDisplay) turnDisplay.remove();
+
+                // Ocultar puntuaciones
+                document.querySelectorAll('.player-score').forEach(scoreDiv => {
+                    scoreDiv.style.display = 'none';
+                });
             });
 
             // Errores generales
@@ -267,9 +330,20 @@
                 alert('Error: ' + data.message);
             });
 
+            // Dealer desconectado
+            window.socket.on('dealerDisconnected', () => {
+                alert('El dealer se ha desconectado. Volviendo al menú principal.');
+                window.location.href = '/';
+            });
+
             window.socket.on('cardsDealt', (data) => {
                 console.log('🃏 Recibiendo cartas del servidor:', data);
-                
+
+                // Limpiar puntuaciones anteriores
+                document.querySelectorAll('.player-score').forEach(scoreDiv => {
+                    scoreDiv.style.display = 'none';
+                });
+
                 // Limpiar manos actuales antes de repartir
                 document.getElementById('dealerCards').innerHTML = '';
                 document.querySelectorAll('.player-cards-hand').forEach(hand => {
@@ -281,12 +355,23 @@
                 // Ocultar botones de acción al repartir, se mostrarán cuando sea el turno
                 document.getElementById('playerActions').style.display = 'none';
                 animateDealing(data.players, data.dealer);
+
+                // Actualizar la puntuación de cada jugador
+                setTimeout(() => {
+                    data.players.forEach(player => {
+                        const scoreDiv = document.getElementById(`player-score-${player.id}`);
+                        if (scoreDiv && player.id === window.socket.id) { // Mostrar solo para el jugador principal
+                            scoreDiv.textContent = `Puntos: ${player.score}`;
+                            scoreDiv.style.display = 'block';
+                        }
+                    });
+                }, 1800); // Retraso para que aparezca después de la animación
             });
-            
+
             // Un jugador (o yo) recibe una nueva carta
             window.socket.on('playerCardUpdate', (data) => {
                 console.log(`[CARD UPDATE] Jugador ${data.playerId} recibe una carta.`);
-                
+
                 const deckElement = document.querySelector('.deck-pile');
                 if (!deckElement) return;
                 const deckRect = deckElement.getBoundingClientRect();
@@ -298,6 +383,14 @@
                 };
                 // Animar solo la nueva carta que se reparte
                 dealOneCard(dealInfo, deckRect);
+
+                // Actualizar la puntuación si soy yo
+                if (data.playerId === window.socket.id) {
+                    const scoreDiv = document.getElementById(`player-score-${data.playerId}`);
+                    if (scoreDiv) {
+                        scoreDiv.textContent = `Puntos: ${data.score}`;
+                    }
+                }
             });
 
             // Un jugador se pasa de 21
@@ -317,9 +410,13 @@
                         infoDisplay.classList.add('status-bust');
                     }
                 }
-                // Si soy yo quien se ha pasado, oculto mis botones de acción.
+                // Si soy yo quien se ha pasado, oculto mis botones de acción y actualizo la puntuación.
                 if (data.playerId === window.socket.id) {
                     document.getElementById('playerActions').style.display = 'none';
+                    const scoreDiv = document.getElementById(`player-score-${data.playerId}`);
+                    if (scoreDiv) {
+                        scoreDiv.textContent = `Puntos: ${data.score}`;
+                    }
                 }
             });
 
@@ -356,7 +453,7 @@
             window.socket.on('revealDealerCard', (data) => {
                 console.log('[DEALER REVEAL] El dealer revela su mano completa:', data.dealerHand);
                 const dealerHandContainer = document.getElementById('dealerCards');
-                
+
                 // Limpiar la mano actual del dealer (que contiene cartas ocultas)
                 dealerHandContainer.innerHTML = '';
 
@@ -366,14 +463,14 @@
                     cardElement.style.position = 'absolute'; // Necesario para el efecto abanico
                     dealerHandContainer.appendChild(cardElement);
                 });
-                
+
                 applyFanEffect(); // Re-aplicar el efecto abanico para ajustar las posiciones
             });
 
             // El dealer pide una carta (Hit)
             window.socket.on('dealerCardUpdate', (data) => {
                 console.log(`[DEALER HIT] Dealer recibe una carta.`);
-                
+
                 const deckElement = document.querySelector('.deck-pile');
                 if (!deckElement) return;
                 const deckRect = deckElement.getBoundingClientRect();
@@ -453,10 +550,10 @@
                 dealerHandContainer.appendChild(dealerScoreDisplay);
 
                 // Abrir el modal de fin de ronda después de 3 segundos
-                 setTimeout(() => {
+                setTimeout(() => {
                     const modal = document.getElementById('endRoundModal');
                     const modalBody = document.getElementById('endRoundModalBody');
-                    
+
                     // 1. Ordenar los resultados
                     const sortedResults = [...data.results].sort((a, b) => {
                         const scoreA = a.playerScore;
@@ -486,11 +583,10 @@
                         resultsHtml += `
                             <div class="results-row">
                                 <span>${result.playerName}</span>
-                                <span>${
-                                    result.playerScore > 31 
-                                    ? `Se pasó (${result.playerScore})` 
-                                    : result.playerScore
-                                }</span>
+                                <span>${result.playerScore > 31
+                                ? `Se pasó (${result.playerScore})`
+                                : result.playerScore
+                            }</span>
                             </div>
                         `;
                     });
@@ -562,8 +658,9 @@
                             <div class="player-info-display">${player.name}</div>
                             <div class="player-bet ${betStatusClass}">${betDisplay}</div>
                             <div class="player-cards-hand"></div>
+                            <div class="player-score" id="player-score-${player.id}" style="display: none; color: white; font-weight: bold;"></div>
                         </div>`;
-                    
+
                     playerCardsContainer.appendChild(playerDiv);
                 });
 
@@ -613,8 +710,9 @@
                             <div class="player-info-display">${player.name}</div>
                             <div class="player-bet ${betStatusClass}">${betDisplay}</div>
                             <div class="player-cards-hand"></div>
+                            <div class="player-score" id="player-score-${player.id}" style="display: none; color: white; font-weight: bold;"></div>
                         </div>`;
-                    
+
                     playerCardsContainer.appendChild(playerDiv);
                 });
             }
@@ -628,6 +726,11 @@
                 const style = document.createElement('style');
                 style.id = 'player-bet-styles';
                 style.innerHTML = `
+                    .player-score {
+position:fixed; bottom:-200px; left:50%; 
+            transform:translateX(-50%); color:#FFD700; 
+            font-size:1.3em; font-weight:bold; text-align:center;
+                    }   
                     .player-bet .chip-stack {
                         position: relative;
                         display: inline-block;
@@ -875,12 +978,12 @@
         }
 
         function highlightCurrentPlayerUI(playerId, playerName) {
-            
+
             // 1. Limpiar todos los highlights y mensajes de turno previos
             document.querySelectorAll('.player-position').forEach(div => {
                 div.classList.remove('current-turn');
                 const infoDisplay = div.querySelector('.player-info-display');
-                
+
                 // Si el texto no es un estado final (plantado/perdido), lo reseteamos al nombre.
                 if (infoDisplay && !infoDisplay.classList.contains('status-stand') && !infoDisplay.classList.contains('status-bust')) {
                     const originalPlayerId = div.dataset.playerId;
@@ -909,7 +1012,7 @@
             } else {
                 // No es mi turno: oculto mis botones.
                 playerActions.style.display = 'none';
-                
+
                 if (playerId) { // Es el turno de otro jugador
                     const playerDiv = document.querySelector(`.player-position[data-player-id="${playerId}"]`);
                     if (playerDiv) {
@@ -953,7 +1056,7 @@
 
         function createCardElement(card) {
             const cardDiv = document.createElement('div');
-            
+
             if (card.hidden) {
                 cardDiv.className = 'card card-back';
                 return cardDiv;
@@ -1082,7 +1185,7 @@
                         angle = (index - pivotIndex) * (maxAngle / pivotIndex);
                     }
                     const horizontalOffset = (index * horizontalSpread) - (totalWidth / 2);
-                    
+
                     card.style.left = '50%';
                     card.style.transform = `translateX(calc(-50% + ${horizontalOffset}px)) rotate(${angle}deg)`;
                 });
@@ -1109,13 +1212,13 @@
                 alert('No se pueden hacer apuestas en este momento');
                 return;
             }
-            
+
             const newBet = currentBet + amount;
             if (newBet > currentBalance) {
                 alert("No tienes suficiente saldo para esa apuesta.");
                 return;
             }
-            
+
             currentBet = newBet;
             updateBetDisplay();
             window.socket.emit('playerBet', { bet: currentBet });
@@ -1132,7 +1235,7 @@
                 alert("Debes realizar una apuesta antes de confirmar.");
                 return;
             }
-            
+
             if (betConfirmed) {
                 alert("Ya confirmaste tu apuesta.");
                 return;
@@ -1154,7 +1257,7 @@
             notification.className = `notification ${type}`;
             notification.textContent = message;
             container.appendChild(notification);
-            
+
             setTimeout(() => {
                 notification.remove();
             }, 3000);
@@ -1187,7 +1290,7 @@
             if (confirm('¿Seguro que quieres salir de la mesa?')) {
                 try {
                     showNotification('Saliendo de la mesa...', 'info');
-                    
+
                     // Notificar al servidor que el jugador está saliendo.
                     // El servidor se encargará de actualizar el conteo y el estado de la mesa.
                     await fetch('/salir-mesa', {

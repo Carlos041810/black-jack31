@@ -77,8 +77,7 @@ body {
 /*SIDEBAR*/
 
 .online-status {
-    display: none;
-    /* Oculto en pantallas grandes */
+    display: flex; /* Se muestra por defecto en todas las pantallas */
     align-items: center;
     gap: 10px;
     color: #D4AF37;
@@ -621,11 +620,6 @@ text {
         margin-top: -195px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
-    }
-
-    .online-status {
-        display: flex;
-        /* Se muestra en pantallas pequeñas */
     }
 
 
