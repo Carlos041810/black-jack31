@@ -355,7 +355,16 @@
                 bettingArea.style.display = 'none';
                 // Ocultar botones de acción al repartir, se mostrarán cuando sea el turno
                 document.getElementById('playerActions').style.display = 'none';
-                animateDealing(data.players, data.dealer);
+
+                // Para los jugadores, las dos primeras cartas del dealer están ocultas y la tercera es visible.
+                // Esta es la mano que se usará para la animación.
+                const dealerHandForAnimation = [
+                    { hidden: true },   // Primera carta oculta
+                    { hidden: true },   // Segunda carta oculta
+                    data.dealer[2]      // Tercera carta visible
+                ];
+
+                animateDealing(data.players, dealerHandForAnimation);
 
                 // Actualizar la puntuación de cada jugador
                 setTimeout(() => {
@@ -1083,16 +1092,16 @@
             const dealSequence = [];
 
             // Ronda 1
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[0] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHand[0] }); // Carta de animación del dealer
 
             // Ronda 2
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[1] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHand[1] }); // Carta de animación del dealer
 
             // Ronda 3
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[2] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHand[2] }); // Carta de animación del dealer
 
             for (const deal of dealSequence) {
                 await dealOneCard(deal, deckRect);

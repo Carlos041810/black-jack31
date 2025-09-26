@@ -117,7 +117,10 @@
             </div>
 
             <!-- Las cartas que el dealer se reparte a sí mismo -->
-            <div class="dealer-hand" id="dealerCards">
+            <div class="dealer-hand" id="dealerCards"></div>
+            <div id="dealerScoreContainer" class="dealer-score-display"">
+                <span id="dealerScore">Puntos: 0</span>
+            </div>
                 <!-- Las cartas del dealer aparecerán aquí cuando se repartan -->
             </div>
         </div>
@@ -356,6 +359,12 @@
 
                 // Re-aplicar el efecto abanico para ajustar las posiciones de todas las cartas
                 applyFanEffect();
+
+                // Actualizar la puntuación del dealer
+                const dealerScore = calculateHandValue(data.dealerHand);
+                const scoreContainer = document.getElementById('dealerScoreContainer');
+                document.getElementById('dealerScore').textContent = `Puntos: ${dealerScore}`; // <-- CORRECCIÓN: Añadir prefijo
+                scoreContainer.style.display = 'block';
             });
 
             // El dealer puede jugar (pedir/plantarse)
@@ -385,7 +394,10 @@
                     card: data.newCard
                 };
                 // Animar la carta que pide el dealer
-                dealOneCard(dealInfo, deckRect);
+                dealOneCard(dealInfo, deckRect).then(() => {
+                    // Actualizar la puntuación del dealer con el valor que envía el servidor
+                    document.getElementById('dealerScore').textContent = `Puntos: ${data.score}`; // <-- CORRECCIÓN: Añadir prefijo
+                });
             });
 
             // Resultados del juego
@@ -416,22 +428,12 @@
 
                 // Mostrar la puntuación final del dealer
                 const dealerHandContainer = document.getElementById('dealerCards');
-                // Remover score display anterior si existe
-                const oldScoreDisplay = dealerHandContainer.querySelector('.dealer-score-display');
-                if (oldScoreDisplay) oldScoreDisplay.remove();
-
-                const dealerScoreDisplay = document.createElement('div');
-                dealerScoreDisplay.className = 'dealer-score-display';
-                let dealerText = `Puntuación del Dealer: ${data.dealerScore}`;
-                if (data.dealerScore > 21) {
-                    dealerText += ' (BUST)'; // Esto se recalcula en el cliente, pero la lógica del servidor ya lo maneja
-                } else if (data.dealerScore === 21 && document.getElementById('dealerCards').querySelectorAll('.card').length === 2) {
-                    dealerText += ' (BLACKJACK)';
-                }
-                dealerScoreDisplay.textContent = dealerText;
-
-                // Insertar el display de puntuación al principio del contenedor
-                dealerHandContainer.appendChild(dealerScoreDisplay);
+                const scoreContainer = document.getElementById('dealerScoreContainer');
+                let dealerText = `Puntos: ${data.dealerScore}`;
+                if (data.dealerScore > 31) dealerText += ' (SE PASÓ)'; // <-- CORRECCIÓN: Usar el texto completo
+                
+                document.getElementById('dealerScore').textContent = dealerText;
+                scoreContainer.style.display = 'block';
 
                 // Abrir el modal de fin de ronda después de un delay para ver los resultados en mesa
                 setTimeout(() => {
@@ -493,6 +495,7 @@
                 // Limpiar manos y highlights
                 document.getElementById('dealerCards').innerHTML = '';
                 document.querySelectorAll('.player-cards-hand').forEach(hand => hand.innerHTML = '');
+                document.getElementById('dealerScoreContainer').style.display = 'none';
                 document.querySelectorAll('.player-position').forEach(div => {
                     div.classList.remove('current-turn');
                     div.classList.remove('busted');
@@ -509,9 +512,6 @@
                 // Ocultar modal de fin de ronda si está abierto
                 const endRoundModal = document.getElementById('endRoundModal');
                 if (endRoundModal) endRoundModal.style.display = 'none';
-
-                const dealerScore = document.querySelector('.dealer-score-display');
-                if (dealerScore) dealerScore.remove();
                 stopBettingTimer();
             });
             
@@ -673,20 +673,7 @@
         .card.card-push-border {
             border: 4px solid #95a5a6 !important; box-shadow: 0 0 15px rgba(149, 165, 166, 0.9) !important;
         }
-
-        .dealer-score-display {
-            position: absolute; /* Posición relativa al contenedor de la mano */
-            bottom: -40px;      /* Lo posicionamos 40px por debajo del contenedor */
-            left: 50%;          /* Centrado horizontalmente */
-            transform: translateX(-50%); /* Ajuste fino del centrado */
-            background: rgba(0, 0, 0, 0.75);
-            color: #FFD700;     /* Color dorado para que destaque */
-            padding: 8px 18px;
-            border-radius: 12px;
-            font-weight: bold;
-            white-space: nowrap; /* Evita que el texto se parta en dos líneas */
-            box-shadow: 0 2px 10px rgba(0,0,0,0.5);
-        }
+        
 
         /* Estilos para el modal de fin de ronda (copiados de players.css) */
         .end-round-modal {
@@ -947,21 +934,23 @@
 
             // Aunque el dealer conoce su mano completa (data.dealer), para la animación
             // inicial, debemos mostrar las cartas como las ven los jugadores.
-            // La mano real del dealer se renderiza al final de la animación.
+            // La mano completa del dealer (`data.dealer`) se usará para renderizar el estado final.
             const dealerHandForDisplay = [
                 { hidden: true }, // Primera carta oculta para la animación
                 { hidden: true }, // Segunda carta oculta para la animación
                 data.dealer[2]    // Tercera carta visible
             ];
-            animateDealing(data.players, dealerHandForDisplay);
+            animateDealing(data.players, dealerHandForDisplay, data.dealer);
         });
 
         function createCardElement(card) {
             const cardDiv = document.createElement('div');
 
             if (card.hidden) {
-                cardDiv.className = 'card card-back';
-                return cardDiv;
+                // Si la carta está marcada como oculta, usamos el reverso.
+                // Esto es crucial para la animación inicial.
+                cardDiv.className = 'card card-back'; 
+                return cardDiv; 
             }
 
             // Usar la imagen de la carta como fondo
@@ -971,7 +960,7 @@
             return cardDiv;
         }
 
-        async function animateDealing(players, dealerHand) {
+        async function animateDealing(players, dealerHandForAnimation, dealerFullHand) {
             const deckElement = document.querySelector('.deck-pile');
             if (!deckElement) return;
 
@@ -981,35 +970,38 @@
             const dealSequence = [];
 
             // Ronda 1: Jugadores -> Dealer
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[0] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[0] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHandForAnimation[0] }); // Carta de animación (oculta)
 
             // Ronda 2: Jugadores -> Dealer
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[1] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[1] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHandForAnimation[1] }); // Carta de animación (oculta)
 
             // Ronda 3: Jugadores -> Dealer
-            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] }));
-            dealSequence.push({ target: 'dealer', card: dealerHand[2] });
+            playersWithBets.forEach(player => dealSequence.push({ target: 'player', id: player.id, card: player.hand[2] })); // Carta real del jugador
+            dealSequence.push({ target: 'dealer', card: dealerHandForAnimation[2] }); // Carta de animación (visible)
 
 
             for (const deal of dealSequence) {
                 await dealOneCard(deal, deckRect);
             }
 
-            // CORRECCIÓN: Después de la animación, el dealer debe renderizar su mano real.
-            // La animación muestra la segunda carta como oculta, pero el dealer ya conoce su valor.
-            // Aquí sincronizamos la vista con los datos reales que recibió.
+            // Después de la animación, renderizamos la mano del dealer como la ven los jugadores
+            // (2 ocultas, 1 visible), que es el estado inicial antes de que el dealer revele su carta.
             const dealerHandContainer = document.getElementById('dealerCards');
             dealerHandContainer.innerHTML = ''; // Limpiar la mano animada
 
-            dealerHand.forEach(cardData => {
+            dealerHandForAnimation.forEach(cardData => {
                 const cardElement = createCardElement(cardData);
                 cardElement.style.position = 'absolute';
                 dealerHandContainer.appendChild(cardElement);
             });
 
-            // Aplicar el efecto abanico a la mano real y final.
+            // La puntuación del dealer no se muestra en este punto, solo la carta visible.
+            // Se calculará y mostrará cuando se revele la mano completa.
+            const scoreContainer = document.getElementById('dealerScoreContainer');
+            scoreContainer.style.display = 'none';
+
             applyFanEffect();
         }
 
@@ -1161,6 +1153,39 @@
             console.log(`📢 Notificación [${type.toUpperCase()}]: ${message}`);
         }
 
+        // Nueva función para calcular el valor de la mano del dealer desde el DOM
+        function calculateHandValueFromDOM() {
+            const dealerHandContainer = document.getElementById('dealerCards');
+            const cards = dealerHandContainer.querySelectorAll('.card:not(.card-back)');
+            let sum = 0;
+            let aces = 0;
+            
+            // Esta es una simulación porque no tenemos los datos de la carta en el DOM.
+            // La forma correcta sería tener los datos en una variable global.
+            // Por ahora, vamos a usar una función de ayuda que simula esto.
+            // En un futuro, deberíamos guardar la mano del dealer en una variable.
+            // Esta es una limitación del enfoque actual.
+            // La lógica real de cálculo está en el servidor, aquí solo mostramos.
+            // Vamos a recalcular basándonos en los datos que sí tenemos.
+            // ¡He encontrado una mejor manera! Usaremos la función `calculateHandValue` que ya existe.
+            return 0; // Este valor se actualizará desde los eventos del socket.
+        }
+
+        // Función para calcular el valor de la mano (copiada de sockets.js para uso en cliente)
+        function calculateHandValue(hand) {
+            let sum = 0;
+            let aces = 0;
+            for (const card of hand) {
+                if (card.hidden) continue;
+                sum += card.points;
+                if (card.value === 'A') aces++;
+            }
+            while (sum > 31 && aces > 0) {
+                sum -= 10;
+                aces--;
+            }
+            return sum;
+        }
         // Función para salir de la sala 
         async function exitRoom() {
             // No se necesita confirmación, la salida es inmediata.

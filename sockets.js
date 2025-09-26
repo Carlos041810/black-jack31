@@ -669,7 +669,10 @@ module.exports = (io, db) => {
             console.log(`[DEALER HIT] Dealer pide carta. Puntuación: ${handValue}`);
 
             // Notificar a todos sobre la nueva carta del dealer
-            io.to(roomCode).emit('dealerCardUpdate', { newCard: newCard });
+            io.to(roomCode).emit('dealerCardUpdate', {
+                newCard: newCard,
+                score: handValue // <-- AÑADIDO: Enviar la nueva puntuación
+            });
 
             // Si el dealer se pasa o llega al límite, se planta automáticamente.
             if (handValue >= 27) {
