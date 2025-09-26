@@ -332,8 +332,9 @@
 
             // Dealer desconectado
             window.socket.on('dealerDisconnected', () => {
+                // Usar un temporizador corto para asegurar que el alert se muestre antes de la redirección
                 alert('El dealer se ha desconectado. Volviendo al menú principal.');
-                window.location.href = '/';
+                setTimeout(() => { window.location.href = '/'; }, 100);
             });
 
             window.socket.on('cardsDealt', (data) => {
@@ -727,8 +728,8 @@
                 style.id = 'player-bet-styles';
                 style.innerHTML = `
                     .player-score {
-position:fixed; bottom:-200px; left:50%; 
-            transform:translateX(-50%); color:#FFD700; 
+            position:relative; bottom:-115px; left:37%;
+            transform:translateX(-50%); color:#FFD700;
             font-size:1.3em; font-weight:bold; text-align:center;
                     }   
                     .player-bet .chip-stack {
@@ -1287,26 +1288,13 @@ position:fixed; bottom:-200px; left:50%;
         }
 
         async function exitRoom() {
-            if (confirm('¿Seguro que quieres salir de la mesa?')) {
-                try {
-                    showNotification('Saliendo de la mesa...', 'info');
-
-                    // Notificar al servidor que el jugador está saliendo.
-                    // El servidor se encargará de actualizar el conteo y el estado de la mesa.
-                    await fetch('/salir-mesa', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ codigo: roomCode })
-                    });
-
-                } catch (error) {
-                    console.error('Error al notificar al servidor sobre la salida:', error);
-                } finally {
-                    // Redirigir a la página de inicio, independientemente de si la llamada a la API tuvo éxito.
-                    // La desconexión del socket también limpiará al jugador en el servidor como respaldo.
-                    window.location.href = '/';
-                }
+            // No se necesita confirmación, la salida es inmediata.
+            if (window.socket) {
+                // Desconectar el socket. El evento 'disconnect' en el servidor se encargará de la limpieza.
+                window.socket.disconnect();
             }
+            // Redirigir inmediatamente a la página de inicio.
+            window.location.href = '/';
         }
 
         // Inicializar

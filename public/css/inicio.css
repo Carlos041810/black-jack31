@@ -1,376 +1,407 @@
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+/* Botón de unirse a mesa más pequeño */
+.join-table-btn {
+    font-size: 14px !important;
+    padding: 8px 18px !important;
+    border-radius: 30px !important;
+    min-width: 90px;
+}
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* Asegura que el padding no aumente el ancho total */
+}
 
-        body {
-            font-family: 'Arial', sans-serif;
-            min-height: 100vh;
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)),
-                url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><radialGradient id="felt" cx="50%" cy="50%"><stop offset="0%" style="stop-color:%23234f3f"/><stop offset="100%" style="stop-color:%231a3d2e"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23felt)"/><circle cx="200" cy="150" r="80" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><circle cx="1000" cy="200" r="60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><circle cx="600" cy="600" r="100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><path d="M 100 300 Q 300 250 500 300 T 900 300" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/><path d="M 200 500 Q 400 450 600 500 T 1000 500" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/></svg>');
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            overflow-y: auto;
-            /* Habilita scroll vertical */
-            padding: 20px 0;
-            /* espacio en pantallas pequeñas */
-        }
+body {
+    font-family: 'Arial', sans-serif;
+    min-height: 100vh;
+    /* Fondo tipo tapete de casino */
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)),
+        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 800"><defs><radialGradient id="felt" cx="50%" cy="50%"><stop offset="0%" style="stop-color:%23234f3f"/><stop offset="100%" style="stop-color:%231a3d2e"/></radialGradient></defs><rect width="100%" height="100%" fill="url(%23felt)"/><circle cx="200" cy="150" r="80" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><circle cx="1000" cy="200" r="60" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><circle cx="600" cy="600" r="100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="2"/><path d="M 100 300 Q 300 250 500 300 T 900 300" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/><path d="M 200 500 Q 400 450 600 500 T 1000 500" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="3"/></svg>');
+    background-size: cover;
+    background-position: center;
 
-        .login-container {
-            width: 90%;
-            max-width: 1000px;
-            background: rgba(0, 0, 0, 0.527);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 40px 60px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
-                0 0 40px rgba(212, 175, 55, 0.2);
-            text-align: center;
-            animation: fadeInUp 1s ease-out;
-        }
+    /* Centrado de contenido */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
+    color: white;
+    overflow-y: auto;
+    /* Permite scroll si hay mucho contenido */
+    padding: 20px 0;
+    /* Espacio en pantallas pequeñas */
+}
 
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+/* CONTENEDOR PRINCIPAL */
+.login-container {
+    width: 90%;
+    max-width: 1000px;
+    background: rgba(0, 0, 0, 0.527);
+    /* Fondo semitransparente */
+    backdrop-filter: blur(10px);
+    /* Difumina fondo */
+    border-radius: 20px;
+    padding: 40px 60px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8),
+        0 0 40px rgba(212, 175, 55, 0.2);
+    /* Brillo dorado */
+    text-align: center;
+    animation: fadeInUp 1s ease-out;
+    /* Animación de entrada */
+}
 
-        .logo {
-            margin-bottom: 30px;
-        }
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Logo / subtítulo */
+.logo {
+    margin-bottom: 30px;
+}
+
+.logo .subtitle {
+    font-size: 16px;
+    color: #ccc;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.welcome-message {
+    margin: 30px 0;
+    font-size: 22px;
+    color: #e0e0e0;
+    line-height: 1.6;
+}
+
+/* 
+==========================================
+🃏 OPCIONES (Dealer / Jugador)
+==========================================
+*/
+.options-container {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 40px;
+    margin: 40px 0;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Estilos generales de las tarjetas */
+.option-card {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
+    border: 2px solid rgba(212, 175, 55, 0.3);
+    border-radius: 15px;
+    padding: 40px 30px;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex: 1 1 300px;
+    /* Flexibles y responsivas */
+    max-width: 700px;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Efecto de brillo al pasar el mouse */
+.option-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.option-card:hover::before {
+    left: 100%;
+}
+
+.option-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3);
+    border-color: #564714;
+}
 
 
 
-        .logo .subtitle {
-            font-size: 16px;
-            color: #ccc;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
+/* Títulos y descripciones (solo jugador los usa) */
+.option-title {
+    font-size: 28px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    color: #fff;
+}
 
-        .welcome-message {
-            margin: 30px 0;
-            font-size: 22px;
-            color: #e0e0e0;
-            line-height: 1.6;
-        }
+.option-description {
+    font-size: 16px;
+    color: #bbb;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
 
-        .options-container {
-            display: flex;
-            flex-direction: row;
-            gap: 40px;
-            margin: 40px 0;
-            justify-content: center;
-            flex-wrap: wrap;
-            /* permite que las cards bajen en pantallas estrechas */
-        }
+/* Botones */
+.option-button {
+    background: linear-gradient(45deg, #d4af37, #ffd700);
+    color: #000;
+    border: none;
+    padding: 15px 40px;
+    border-radius: 50px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
 
-        .option-card {
-            background: linear-gradient(135deg, rgba(212, 175, 55, 0.1), rgba(212, 175, 55, 0.05));
-            border: 2px solid rgba(212, 175, 55, 0.3);
-            border-radius: 15px;
-            padding: 40px 30px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            flex: 1 1 300px;
-            /* crece y baja si es necesario */
-            max-width: 400px;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
+.option-button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 30px rgba(78, 64, 19, 0.4);
+}
 
-        .option-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.1), transparent);
-            transition: left 0.5s ease;
-        }
+/* Botón especial dealer */
+.dealer-card .option-button {
+    background: #F6AD55;
+}
 
-        .option-card:hover::before {
-            left: 100%;
-        }
+/* Botón especial jugador */
+.player-card .option-button {
+    background: #38A169;
+    color: white;
+}
 
-        .option-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(212, 175, 55, 0.3);
-            border-color: #564714;
-        }
+/* 
+==========================================
+♠ CARTAS DECORATIVAS FLOTANTES
+==========================================
+*/
+.floating-cards {
+    position: absolute;
+    font-size: 100px;
+    opacity: 0.1;
+    animation: float 6s ease-in-out infinite;
+    pointer-events: none;
+}
 
-        .option-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
+.card-1 {
+    top: 10%;
+    left: 10%;
+    animation-delay: 0s;
+}
 
-        .option-title {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 15px;
-            color: #fff;
-        }
+.card-2 {
+    top: 20%;
+    right: 15%;
+    animation-delay: 2s;
+}
 
-        .option-description {
-            font-size: 16px;
-            color: #bbb;
-            line-height: 1.5;
-            margin-bottom: 20px;
-        }
+.card-3 {
+    bottom: 20%;
+    left: 20%;
+    animation-delay: 4s;
+}
 
-        .option-button {
-            background: linear-gradient(45deg, #d4af37, #ffd700);
-            color: #000;
-            border: none;
-            padding: 15px 40px;
-            border-radius: 50px;
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+.card-4 {
+    bottom: 10%;
+    right: 10%;
+    animation-delay: 1s;
+}
 
-        .option-button:hover {
-            transform: scale(1.05);
-            box-shadow: 0 10px 30px rgba(78, 64, 19, 0.4);
-        }
+@keyframes float {
 
-        .dealer-card .option-button {
-            background: #F6AD55;
-        }
+    0%,
+    100% {
+        transform: translateY(0px) rotate(0deg);
+    }
 
-        .player-card .option-button {
-            background: #38A169;
-            color: white;
-        }
+    50% {
+        transform: translateY(-20px) rotate(5deg);
+    }
+}
 
-        .floating-cards {
-            position: absolute;
-            font-size: 100px;
-            opacity: 0.1;
-            animation: float 6s ease-in-out infinite;
-            pointer-events: none;
-        }
+/* 
+==========================================
+📋 TABLA DE MESAS DISPONIBLES
+==========================================
+*/
+#available-tables-container {
+    width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+}
 
-        .card-1 {
-            top: 10%;
-            left: 10%;
-            animation-delay: 0s;
-        }
+.tables-header,
+.table-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1fr;
+    /* Mesa | Jugadores | Acción */
+    gap: 15px;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
 
-        .card-2 {
-            top: 20%;
-            right: 15%;
-            animation-delay: 2s;
-        }
+.tables-header {
+    font-weight: bold;
+    color: #D4AF37;
+    /* Dorado */
+    text-transform: uppercase;
+    font-size: 0.9em;
+    border-bottom: 2px solid #D4AF37;
+    margin-bottom: 5px;
+}
 
-        .card-3 {
-            bottom: 20%;
-            left: 20%;
-            animation-delay: 4s;
-        }
+.table-row {
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
 
-        .card-4 {
-            bottom: 10%;
-            right: 10%;
-            animation-delay: 1s;
-        }
+.table-row:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
 
-        @keyframes float {
+.table-cell.action-cell {
+    text-align: right;
+}
 
-            0%,
-            100% {
-                transform: translateY(0px) rotate(0deg);
-            }
+/* 
+==========================================
+📦 MODALES (Unirse / Cargando)
+==========================================
+*/
+.modal {
+    display: none;
+    /* Ocultos por defecto */
+    position: fixed;
+    z-index: 1000;
+    /* Siempre encima */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    /* Fondo oscuro */
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
 
-            50% {
-                transform: translateY(-20px) rotate(5deg);
-            }
-        }
+.modal-content {
+    background: rgba(0, 0, 0, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    border: 2px solid rgba(76, 175, 80, 0.5);
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+}
 
-        .footer-text {
-            margin-top: 30px;
-            font-size: 14px;
-            color: #888;
-            font-style: italic;
-        }
+/* Títulos dentro del modal */
+.modal h3 {
+    color: #4caf50;
+    margin-bottom: 20px;
+    font-size: 24px;
+}
 
-        /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            overflow-y: auto;
-            /* scroll si es necesario */
-            padding: 20px;
-        }
+/* Input del modal */
+.code-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 18px;
+    border: 2px solid rgba(76, 175, 80, 0.3);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    text-align: center;
+    margin: 20px 0;
+    letter-spacing: 3px;
+}
 
-        .modal-content {
-            background: rgba(0, 0, 0, 0.95);
-            padding: 40px;
-            border-radius: 20px;
-            border: 2px solid rgba(76, 175, 80, 0.5);
-            text-align: center;
-            max-width: 400px;
-            width: 100%;
-        }
+.code-input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
 
-        .modal h3 {
-            color: #4caf50;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
+/* Botones del modal */
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+}
 
-        .code-input {
-            width: 100%;
-            padding: 15px;
-            font-size: 18px;
-            border: 2px solid rgba(76, 175, 80, 0.3);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            text-align: center;
-            margin: 20px 0;
-            letter-spacing: 3px;
-        }
+.modal-btn {
+    padding: 12px 30px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+}
 
-        .code-input:focus {
-            outline: none;
-            border-color: #4caf50;
-            box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
-        }
+.join-btn {
+    background: #4caf50;
+    color: white;
+}
 
-        .modal-buttons {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-            flex-wrap: wrap;
-        }
+.cancel-btn {
+    background: #666;
+    color: white;
+}
 
-        .modal-btn {
-            padding: 12px 30px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            cursor: pointer;
-            font-weight: bold;
-        }
+/* Spinner del modal de carga */
+.loading-spinner {
+    font-size: 2em;
+    text-align: center;
+    animation: spin 1s linear infinite;
+}
 
-        .join-btn {
-            background: #4caf50;
-            color: white;
-        }
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
 
-        .cancel-btn {
-            background: #666;
-            color: white;
-        }
-               .modal {
-            display: none;
-            /* Oculto por defecto, se activa con JS */
-            position: fixed;
-            /* Se queda fijo en la pantalla */
-            z-index: 1000;
-            /* Se asegura que esté por encima de todo */
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            /* Fondo oscuro semitransparente */
+    100% {
+        transform: rotate(360deg);
+    }
+}
 
-            /* Centrado con Flexbox */
-            justify-content: center;
-            align-items: center;
-        }
+/* Botones deshabilitados */
+.option-button:disabled {
+    background: #444;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
 
-        .loading-spinner {
-            font-size: 2em;
-            text-align: center;
-            animation: spin 1s linear infinite;
-        }
+/* 
+==========================================
+📱 RESPONSIVE
+==========================================
+*/
+@media (max-width: 868px) {
+    .options-container {
+        gap: 20px;
+        align-items: center;
+    }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
-
-        .option-button:disabled {
-            background: #444;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        /* Responsive */
-        @media (max-width: 768px) {
-            .login-container {
-                padding: 30px 20px;
-            }
-
-            .logo h1 {
-                font-size: 36px;
-            }
-
-            .welcome-message {
-                font-size: 18px;
-            }
-
-            .options-container {
-            flex-direction: column-reverse;
-                gap: 20px;
-            }
-
-            .option-card {
-                padding: 30px 20px;
-                min-height: 360px;
-            }
-            .dealer-card.option-card {
-                min-height: 10px;
-            }
-
-            .option-title {
-                font-size: 22px;
-            }
-
-            .option-button {
-                font-size: 16px;
-                padding: 12px 30px;
-            }
-        }
-
-        @media (max-height: 700px) {
-            body {
-                align-items: flex-start;
-                font-size: 10px;
-            }
-        }
+    .player-card {
+        max-width: 550px;
+        width: 100%;
+    }
+}

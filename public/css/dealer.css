@@ -701,7 +701,11 @@ body {
 
 }
 
-@media (max-width: 600px) {
+@media (max-width: 1200px) {
+    .game-area {
+        margin-left: 0; /* El área de juego ocupa todo el ancho */
+    }
+
     .sidebar {
         /* 1. Posicionamos el panel donde debe estar, pero lo ocultamos */
         width: 90%;
@@ -724,16 +728,11 @@ body {
         transform: translateY(15px) scale(0.98);
         transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
     }
-    .game-area {
-        margin-left: 0;
-        padding: 15px;
-    }
 
-    /* Botón flotante para abrir controles en móvil */
+    /* Botón flotante para abrir controles */
     .open-controls-btn {
         position: fixed;
         bottom: 100px;
-        /* Aumentado para separarlo más del borde */
         right: 20px;
         width: 60px;
         height: 60px;
@@ -755,18 +754,15 @@ body {
         transform: scale(1.1);
     }
 
-    /* Convertimos el sidebar en un panel flotante en la esquina inferior derecha */
+    /* Clase para mostrar el modal */
     .sidebar.active {
-        /* 3. Al activarse, lo hacemos visible y lo devolvemos a su posición original */
         opacity: 1;
         visibility: visible;
         transform: translateY(0) scale(1);
     }
+}
 
-    .dealer-area {
-        gap: 30px;
-    }
-
+@media (max-width: 600px) {
     .dealer-actions {
         width: 90%;
         justify-content: center;

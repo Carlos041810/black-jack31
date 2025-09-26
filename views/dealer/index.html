@@ -514,15 +514,11 @@
                 if (dealerScore) dealerScore.remove();
                 stopBettingTimer();
             });
-
-            // Eventos adicionales que podrían estar faltando
-            socket.on('reconnect', () => {
-                console.log('🔄 Reconectado al servidor');
-                showNotification('Reconectado', 'success');
-                // Volver a unirse a la sala
-                if (roomCode) {
-                    socket.emit('joinRoom', roomCode);
-                }
+            
+            // Evento para confirmar que la reconexión fue exitosa
+            socket.on('reconnectedSuccessfully', () => {
+                console.log('✅ Reconexión a la sala confirmada por el servidor.');
+                showNotification('Reconectado a la sala', 'success');
             });
         }
 
@@ -530,15 +526,16 @@
 
         function renderPlayers(players) {
             const playerCardsContainer = document.getElementById('playerCards');
+            const activePlayers = players.filter(p => !p.disconnected);
 
-            if (players.length === 0) {
+            if (activePlayers.length === 0) {
                 playerCardsContainer.innerHTML = '<div class="waiting-message">Esperando jugadores...</div>';
                 return;
             }
 
             playerCardsContainer.innerHTML = '';
 
-            players.forEach((player, index) => {
+            activePlayers.forEach((player, index) => {
                 const playerDiv = document.createElement('div');
                 playerDiv.className = 'player-position';
                 playerDiv.dataset.playerId = player.id;
@@ -1166,35 +1163,13 @@
 
         // Función para salir de la sala 
         async function exitRoom() {
-            if (confirm('¿Seguro que quieres cerrar la sala? Esto desconectará a todos los jugadores.')) {
-                try {
-                    showNotification('Cerrando sala...', 'info');
+            // No se necesita confirmación, la salida es inmediata.
+            showNotification('Cerrando sala...', 'info');
 
-                    // Intentar cerrar la sala en el servidor
-                    const response = await fetch('/salir-mesa', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ codigo: roomCode })
-                    });
-
-                    if (response.ok) {
-                        showNotification('Sala cerrada exitosamente', 'success');
-                        setTimeout(() => {
-                            window.location.href = '/';
-                        }, 1500);
-                    } else {
-                        throw new Error('Error en el servidor');
-                    }
-                } catch (error) {
-                    console.error('Error al salir de la mesa:', error);
-                    showNotification('Error al cerrar la sala. Redirigiendo...', 'warning');
-
-                    // Redirigir de todos modos después de un breve delay
-                    setTimeout(() => {
-                        window.location.href = '/';
-                    }, 2000);
-                }
-            }
+            // Emitir un evento al servidor para que cierre la sala inmediatamente para todos.
+            socket.emit('dealerExit');
+            // Redirigir al dealer a la página de inicio de inmediato.
+            window.location.href = '/';
         }
 
         // === MANEJO DE ERRORES Y RECONEXIÓN ===

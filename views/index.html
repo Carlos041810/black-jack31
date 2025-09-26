@@ -7,38 +7,26 @@
     <title>Royal Blackjack Casino</title>
     <link rel="stylesheet" href="/css/inicio.css">
     <style>
-        /* Estilos para la nueva tabla de mesas */
-        #available-tables-container {
-            width: 100%;
-            padding: 10px;
-            box-sizing: border-box;
-        }
-        .tables-header, .table-row {
-            display: grid;
-            grid-template-columns: 2fr 1.5fr 1fr; /* Mesa | Jugadores | Acción */
-            gap: 15px;
+        #resetTablesBtn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #c0392b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            display: flex;
             align-items: center;
-            padding: 12px 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        .tables-header {
-            font-weight: bold;
-            color: #D4AF37; /* Dorado */
-            text-transform: uppercase;
-            font-size: 0.9em;
-            border-bottom: 2px solid #D4AF37;
-            margin-bottom: 5px;
-        }
-        .table-row {
-            font-size: 1em;
+            justify-content: center;
             transition: background-color 0.2s;
         }
-        .table-row:hover {
-            background-color: rgba(255, 255, 255, 0.05);
-        }
-        .table-cell.action-cell {
-            text-align: right;
-        }
+        #resetTablesBtn:hover { background-color: #e74c3c; }
     </style>
 </head>
 
@@ -57,12 +45,10 @@
             <strong>¿Cómo deseas ingresar?</strong>
         </div>
         <div class="options-container">
-            <div class="option-card dealer-card">
-                <div class="option-title">INGRESAR COMO DEALER</div>
-                <div class="option-description">
-                    Controla las mesas, administra los juegos y gestiona la experiencia de los jugadores
-                </div>
-                <button class="option-button" id="dealerBtn" onclick="enterAsDealer()">ACCEDER COMO DEALER</button>
+            <div class="dealer-simple">
+                <button class="option-button" id="dealerBtn" onclick="enterAsDealer()">
+                    INGRESAR COMO DEALER
+                </button>
             </div>
             <div class="option-card player-card">
                 <div class="option-title">INGRESAR COMO JUGADOR</div>
@@ -83,7 +69,7 @@
             <h3 id="modal-title">🃏 Unirse a Mesa</h3>
             <p style="color: #ccc; margin-bottom: 20px;">Ingresa tu nombre para unirte a la mesa.</p>
             <input type="text" class="code-input" id="playerNameInput" placeholder="Tu nombre" maxlength="30"
-                   style="margin-bottom: 20px;">
+                style="margin-bottom: 20px;">
 
             <div class="modal-buttons">
                 <button class="modal-btn join-btn" id="joinBtn" onclick="joinRoom()">UNIRSE</button>
@@ -100,139 +86,13 @@
             <div class="loading-spinner">⚡</div>
         </div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/inicio.js"></script>
 
-    <script>
-        let selectedRoomCode = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            loadAvailableTables();
-        });
-
-        async function loadAvailableTables() {
-            const container = document.getElementById('available-tables-container');
-            container.innerHTML = '<div class="loading-tables">Buscando mesas...</div>';
-
-            try {
-                const response = await fetch('/mesas-disponibles');
-                const data = await response.json();
-
-                if (data.success && data.mesas.length > 0) {
-                    // Crear la cabecera de la tabla
-                    container.innerHTML = `
-                        <div class="tables-header">
-                            <div class="header-cell">Mesa</div>
-                            <div class="header-cell">Jugadores</div>
-                            <div class="header-cell action-cell">Acción</div>
-                        </div>
-                    `;
-                    
-                    // Añadir cada mesa como una fila
-                    data.mesas.forEach(mesa => {
-                        const tableElement = document.createElement('div');
-                        tableElement.className = 'table-row';
-                        tableElement.innerHTML = `
-                            <div class="table-cell">${mesa.dealer}</div>
-                            <div class="table-cell">${mesa.jugadores_actual - 1} / 3</div>
-                            <div class="table-cell action-cell">
-                                <button class="option-button join-table-btn" onclick="showPlayerNameModal('${mesa.codigo}')">UNIRSE</button>
-                            </div>
-                        `;
-                        container.appendChild(tableElement);
-                    });
-
-                } else {
-                    container.innerHTML = '<div class="no-tables-msg">No hay mesas disponibles en este momento.</div>';
-                }
-            } catch (error) {
-                container.innerHTML = '<div class="no-tables-msg">Error al cargar las mesas.</div>';
-                console.error('Error al cargar mesas:', error);
-            }
-        }
-
-        async function enterAsDealer() {
-            const dealerBtn = document.getElementById('dealerBtn');
-            const loadingModal = document.getElementById('loadingModal');
-
-            try {
-                loadingModal.style.display = 'flex';
-                dealerBtn.disabled = true;
-                dealerBtn.textContent = 'CREANDO MESA...';
-
-                const response = await fetch('/crear-mesa', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ dealer: 'Dealer Principal' })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    console.log('Mesa creada con código:', data.codigo);
-                    window.location.href = `/dealer?codigo=${data.codigo}`;
-
-                    // Emitir evento con el código
-                    const event = new CustomEvent('mesaCreada', { detail: data.codigo });
-                    window.dispatchEvent(event);
-                } else {
-                    throw new Error(data.error || 'Error desconocido al crear la mesa');
-                }
-            } catch (error) {
-                console.error('Error al crear la mesa:', error);
-                alert('Error al crear la mesa: ' + error.message);
-
-                loadingModal.style.display = 'none';
-                dealerBtn.disabled = false;
-                dealerBtn.textContent = 'ACCEDER COMO DEALER';
-            }
-        }
-
-        async function joinRoom() {
-            const playerName = document.getElementById('playerNameInput').value;
-            const joinBtn = document.getElementById('joinBtn');
-            if (!playerName.trim()) {
-                alert('Por favor ingresa tu nombre para unirte a la mesa.');
-                return;
-            }
-
-            try {
-                joinBtn.disabled = true;
-                joinBtn.textContent = 'CONECTANDO...';
-
-                const response = await fetch('/verificar-mesa', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ codigo: selectedRoomCode })
-                });
-
-                const data = await response.json();
-
-                if (data.success) {
-                    console.log(`Mesa ${selectedRoomCode} verificada. Uniéndose...`);
-                    window.location.href = `/player?codigo=${selectedRoomCode}&nombre=${encodeURIComponent(playerName)}`;
-                } else {
-                    throw new Error(data.error || 'No se pudo unir a la mesa.');
-                }
-            } catch (error) {
-                console.error('Error al verificar la mesa:', error);
-                alert('Error: ' + error.message);
-
-                joinBtn.disabled = false;
-                joinBtn.textContent = 'UNIRSE';
-            }
-        }
-
-        function showPlayerNameModal(roomCode) {
-            selectedRoomCode = roomCode;
-            document.getElementById("codeModal").style.display = "flex";
-            document.getElementById("playerNameInput").focus();
-        }
-
-        function closeModal() {
-            document.getElementById("codeModal").style.display = "none";
-        }
-
-    </script>
-
+    <!-- Botón de reseteo para desarrollo -->
+    <button id="resetTablesBtn" title="Resetear todas las mesas">
+        🗑️
+    </button>
 </body>
 
 </html>

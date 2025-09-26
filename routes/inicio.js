@@ -52,6 +52,15 @@ module.exports = function(db, io) {
                     sql: "UPDATE mesas SET estado = ?, jugadores_actual = ? WHERE codigo = ?",
                     args: ['iniciado', 1, mesaAsignada.codigo] // 1 para el dealer
                 });
+
+                // Obtener la lista actualizada de mesas para enviarla
+                const result = await db.execute({
+                    sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 AND jugadores_actual >= 1 ORDER BY codigo DESC",
+                    args: []
+                });
+
+                // Notificar a todos los clientes que la lista de mesas ha cambiado, enviando la nueva lista.
+                io.emit('mesasActualizadas', result.rows);
                 
                 console.log(`Dealer asignado a la mesa ${mesaAsignada.codigo}`);
                 res.json({ 
@@ -75,7 +84,7 @@ module.exports = function(db, io) {
         try {
             const result = await db.execute({
                 // Buscamos mesas que estén esperando, tengan menos de 4 jugadores y al menos 1 (el dealer)
-                sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 AND jugadores_actual > 0 ORDER BY codigo DESC",
+                sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
                 args: []
             });
 
@@ -168,10 +177,47 @@ module.exports = function(db, io) {
             }
 
             console.log(`Jugador solicitó salir de la mesa ${codigo}. La desconexión del socket manejará la actualización.`);
+            
+            // Notificar a los clientes de la página de inicio que actualicen las mesas, ya que un jugador se fue
+            const mesasResult = await db.execute({
+                sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
+                args: []
+            });
+            
+            io.emit('mesasActualizadas', mesasResult.rows);
+
             res.json({ success: true, message: "Solicitud de salida procesada." });
         } catch (error) {
             console.error(`Error al salir de la mesa con código "${codigo}":`, error);
             res.status(500).json({ success: false, error: "Error interno del servidor al salir de la mesa." });
+        }
+    });
+
+    // Ruta para resetear las mesas (para desarrollo)
+    router.post("/reset-tables", async (req, res) => {
+        console.log('🔧 POST /reset-tables - Solicitud de limpieza de mesas recibida.');
+        try {
+            // La consulta que solicitaste.
+            // NOTA: Usar 'id IN (1, 2)' puede ser frágil. Usar 'codigo IN ('2025', '2024')' es más robusto.
+            // He usado la consulta que pediste, pero considera cambiarla.
+            await db.execute({
+                sql: "UPDATE mesas SET estado = 'finalizado', jugadores_actual = 0 WHERE id IN (1, 2)",
+                args: []
+            });
+            console.log('[DB] Mesas reseteadas a estado finalizado.');
+
+            // Notificar a todos los clientes que la lista de mesas ha cambiado (ahora estará vacía)
+            const result = await db.execute({
+                sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
+                args: []
+            });
+            io.emit('mesasActualizadas', result.rows);
+            console.log('📢 Emitiendo actualización de mesas vacías a todos los clientes.');
+
+            res.json({ success: true, message: "Mesas reseteadas correctamente." });
+        } catch (error) {
+            console.error('Error reseteando las mesas:', error);
+            res.status(500).json({ success: false, error: "Error interno del servidor al resetear las mesas." });
         }
     });
 

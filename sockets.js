@@ -182,13 +182,6 @@ module.exports = (io, db) => {
 
                 const room = rooms[roomCode];
 
-                // Limitar el número de jugadores a 3 (el dealer no cuenta en este array)
-                if (playerName && room.players.length >= 3) {
-                    console.log(`Intento de unirse a sala llena ${roomCode} por ${playerName}. Jugadores: ${room.players.length}`);
-                    socket.emit('error', { message: 'La mesa está completa. No se pueden unir más de 3 jugadores.' });
-                    return; // Detener la ejecución para no unir al jugador
-                }
-
                 socket.join(roomCode);
                 socket.roomCode = roomCode;
 
@@ -207,7 +200,7 @@ module.exports = (io, db) => {
                     // Enviar el estado completo del juego SOLO al jugador que se reconecta
                     socket.emit('reconnectState', {
                         gameState: room.gameState,
-                        players: room.players, // Enviar la lista completa de jugadores
+                        players: room.players,
                         dealerHand: room.dealerHand,
                         bet: existingPlayer.bet,
                         balance: existingPlayer.balance,
@@ -218,15 +211,22 @@ module.exports = (io, db) => {
                     return; // Detener para no crear un jugador nuevo
                 }
 
+                // Si no es un jugador que se reconecta, verificamos si la sala está llena.
+                if (playerName && room.players.length >= 3) {
+                    console.log(`Intento de unirse a sala llena ${roomCode} por ${playerName}. Jugadores: ${room.players.length}`);
+                    socket.emit('error', { message: 'La mesa está completa. No se pueden unir más de 3 jugadores.' });
+                    return;
+                }
+
                 if (playerName) {
                     // Si es un jugador nuevo, lo añadimos
                     console.log(`Jugador '${playerName}' (ID: ${socket.id}) se une a la sala ${roomCode}`);
-                    room.players.push({ 
-                        id: socket.id, 
-                        name: playerName, 
-                        bet: 0, 
+                    room.players.push({
+                        id: socket.id,
+                        name: playerName,
+                        bet: 0,
                         betConfirmed: false,
-                        balance: BETTING_CONFIG.INITIAL_BALANCE, // Saldo inicial
+                        balance: BETTING_CONFIG.INITIAL_BALANCE,
                         disconnected: false
                     });
                 } else {
@@ -258,18 +258,42 @@ module.exports = (io, db) => {
 
                 // --- NUEVA LÓGICA ---
                 // Incrementar el contador de jugadores en la base de datos
-                try {
-                    await db.execute({
-                        sql: "UPDATE mesas SET jugadores_actual = jugadores_actual + 1 WHERE codigo = ?",
-                        args: [roomCode]
-                    });
-                    console.log(`[DB] Jugador se unió. Mesa ${roomCode} actualizada. Contador incrementado.`);
-                } catch (dbError) {
-                    console.error(`[DB] Error al incrementar jugadores en joinRoom para ${roomCode}:`, dbError);
+                if (playerName) {
+                    try {
+                        await db.execute({ sql: "UPDATE mesas SET jugadores_actual = jugadores_actual + 1 WHERE codigo = ?", args: [roomCode] });
+                        console.log(`[DB] Jugador se unió. Mesa ${roomCode} actualizada. Contador incrementado.`);
+
+                        // Notificar a todos los clientes de la página de inicio que la lista de mesas ha cambiado
+                        const result = await db.execute({
+                            sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
+                            args: []
+                        });
+                        io.emit('mesasActualizadas', result.rows);
+                        console.log('📢 Emitiendo actualización de mesas a todos los clientes tras unirse un jugador.');
+
+                    } catch (dbError) { console.error(`[DB] Error al incrementar jugadores o notificar en joinRoom para ${roomCode}:`, dbError); }
                 }
+
             } catch (error) {
                 console.error(`Error en joinRoom para sala ${roomCode}:`, error);
                 socket.emit('error', { message: 'Error al unirse a la sala' });
+            }
+        });
+
+        // Evento para que un nuevo cliente en la página de inicio obtenga las mesas
+        socket.on('getInitialTables', async () => {
+            try {
+                const result = await db.execute({
+                    sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
+                    args: []
+                });
+                // Enviar la lista solo al cliente que la solicitó
+                // También se la enviamos a todos para mantener la consistencia
+                io.emit('mesasActualizadas', result.rows);
+                socket.emit('mesasActualizadas', result.rows);
+            } catch (dbError) {
+                console.error('[DB] Error al obtener mesas iniciales:', dbError);
+                socket.emit('mesasActualizadas', []); // Enviar lista vacía en caso de error
             }
         });
 
@@ -709,64 +733,96 @@ module.exports = (io, db) => {
             io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
             io.to(roomCode).emit('gameStateUpdate', { state: GAME_STATES.WAITING });
         });
-        
-        //Evento para manejar la desconexión de un jugador
+
+        // Evento para cuando el dealer cierra la sala intencionadamente
+        socket.on('dealerExit', async () => {
+            const roomCode = socket.roomCode;
+            if (!roomCode || !rooms[roomCode]) return;
+
+            console.log(`🚪 El Dealer ha cerrado la sala ${roomCode} intencionadamente.`);
+            
+            try {
+                await db.execute({
+                    sql: "UPDATE mesas SET estado = 'esperando', jugadores_actual = 0 WHERE codigo = ?",
+                    args: [roomCode]
+                });
+                console.log(`[DB] Mesa ${roomCode} reseteada por cierre del dealer.`);
+            } catch (dbError) {
+                console.error(`[DB] Error reseteando mesa ${roomCode} por cierre del dealer:`, dbError);
+            }
+
+            // Notificar a los jugadores que el dealer cerró la sala y luego desconectarlos
+            io.to(roomCode).emit('dealerDisconnected', { message: 'El dealer ha cerrado la sala. Volviendo al menú principal.' });
+            
+            // Eliminar la sala de la memoria
+            delete rooms[roomCode];
+            console.log(`Sala ${roomCode} eliminada de la memoria.`);
+        });
+
         socket.on('disconnect', async () => {
-            console.log(`🔌 Usuario desconectado con ID: ${socket.id}`);
+            console.log(`👋 Usuario desconectado: ${socket.id}`);
             const roomCode = socket.roomCode;
 
-            if (roomCode && rooms[roomCode]) {
-                const playerIndex = rooms[roomCode].players.findIndex(p => p.id === socket.id);
-
-                // --- LÓGICA DE DESCONEXIÓN DE JUGADOR ---
-                const player = rooms[roomCode].players.find(p => p.id === socket.id);
-                if (player) {
-                    console.log(`Jugador '${player.name}' ha perdido la conexión en la sala ${roomCode}.`);
-                    player.disconnected = true;
-                    player.disconnectedAt = Date.now();
-
-                    // Solo decrementamos en la DB si el jugador no se está reconectando
-                    // La reconexión incrementará el contador de nuevo.
-                    setTimeout(() => {
-                        if (player.disconnected) { // Si después de un segundo sigue desconectado, actualizamos la DB
-                            db.execute({
-                                sql: "UPDATE mesas SET jugadores_actual = CASE WHEN jugadores_actual > 0 THEN jugadores_actual - 1 ELSE 0 END WHERE codigo = ?",
-                                args: [roomCode]
-                            }).catch(err => console.error("Error al decrementar jugadores en DB por desconexión:", err));
-                        }
-                    }, 1000);
-
-                    // Notificar a los demás que el jugador se desconectó (opcional, para UI)
-                    io.to(roomCode).emit('playerDisconnected', { playerId: socket.id });
-                    io.to(roomCode).emit('updatePlayerList', rooms[roomCode].players);
-
-                } else {
-                    // Si no es un jugador, es el dealer
-                    console.log(`El Dealer de la sala ${roomCode} se ha desconectado.`);
-                    if (rooms[roomCode]) {
-                        // --- LÓGICA DE PERÍODO DE GRACIA ---
-                        console.log(`[GRACE PERIOD] Iniciando temporizador de 15s para la sala ${roomCode}.`);
-                        io.to(roomCode).emit('dealerConnectionLost'); // Notificar a los jugadores que el dealer perdió conexión
-
-                        rooms[roomCode].dealerDisconnectTimer = setTimeout(async () => {
-                            console.log(`[GRACE PERIOD ENDED] El dealer no se reconectó. Cerrando la sala ${roomCode}.`);
-                            
-                            io.to(roomCode).emit('dealerDisconnected'); // Ahora sí, sacar a todos
-                            
-                            try {
-                                await db.execute({
-                                    sql: "UPDATE mesas SET estado = ?, jugadores_actual = ? WHERE codigo = ?",
-                                    args: ['finalizado', 0, roomCode]
-                                });
-                                console.log(`[DB] Mesa ${roomCode} actualizada a 'finalizado' y 0 jugadores.`);
-                            } catch (dbError) {
-                                console.error(`Error actualizando DB en disconnect (dealer):`, dbError);
-                            }
-                            delete rooms[roomCode];
-                        }, 15000);
-                    }
-                }
+            if (!roomCode || !rooms[roomCode]) {
+                console.log(`El usuario ${socket.id} no estaba en ninguna sala activa.`);
+                return;
             }
+
+            const room = rooms[roomCode];
+            const playerIndex = room.players.findIndex(p => p.id === socket.id);
+            const wasPlayer = playerIndex !== -1;
+
+            if (wasPlayer) {
+                const playerName = room.players[playerIndex].name;
+                console.log(`Jugador '${playerName}' se ha desconectado de la sala ${roomCode}.`);
+                room.players.splice(playerIndex, 1); // Eliminar jugador de la sala
+
+                try {
+                    await db.execute({
+                        sql: "UPDATE mesas SET jugadores_actual = jugadores_actual - 1 WHERE codigo = ? AND jugadores_actual > 0",
+                        args: [roomCode]
+                    });
+                    console.log(`[DB] Jugador se fue. Mesa ${roomCode} actualizada. Contador decrementado.`);
+                } catch (dbError) {
+                    console.error(`[DB] Error al decrementar jugadores en disconnect para ${roomCode}:`, dbError);
+                }
+
+                io.to(roomCode).emit('updatePlayerList', room.players);
+
+            } else { // Era el dealer
+                console.log(`🚨 El Dealer de la sala ${roomCode} se ha desconectado. Iniciando temporizador de 10 segundos para cierre de sala.`);
+                // Iniciar un temporizador. Si el dealer no se reconecta, la sala se cierra.
+                room.dealerDisconnectTimer = setTimeout(async () => {
+                    console.log(`[TIMER] El dealer no se reconectó a la sala ${roomCode}. Cerrando la sala.`);
+                    try {
+                        await db.execute({
+                            sql: "UPDATE mesas SET estado = 'esperando', jugadores_actual = 0 WHERE codigo = ?",
+                            args: [roomCode]
+                        });
+                        console.log(`[DB] Mesa ${roomCode} reseteada por desconexión del dealer.`);
+                    } catch (dbError) {
+                        console.error(`[DB] Error reseteando mesa ${roomCode} por desconexión del dealer:`, dbError);
+                    }
+
+                    // Notificar a los jugadores restantes que el dealer se fue
+                    io.to(roomCode).emit('dealerDisconnected');
+                    
+                    // Eliminar la sala de la memoria
+                    delete rooms[roomCode];
+                    console.log(`Sala ${roomCode} eliminada de la memoria.`);
+
+                    // Notificar a la página de inicio sobre la mesa liberada
+                    io.emit('mesasActualizadas', (await db.execute("SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC")).rows);
+                }, 10000); // 10 segundos de gracia para que el dealer se reconecte
+            }
+
+            // Finalmente, notificar a todos en la página de inicio sobre el cambio en las mesas
+            const result = await db.execute({
+                sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
+                args: []
+            });
+            io.emit('mesasActualizadas', result.rows);
+            console.log('📢 Emitiendo actualización de mesas a todos los clientes.');
         });
     });
 };
