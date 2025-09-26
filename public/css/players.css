@@ -748,6 +748,7 @@ position: absolute;
 bottom: 100px;      /* o 0 para bien pegado */
 left: 50%;
 transform: translateX(-50%);
+    bottom: 50px;
 
     }
 

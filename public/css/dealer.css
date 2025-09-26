@@ -706,6 +706,9 @@ body {
     .player-cards-hand {
         height: 105px;
     }
+        .dealer-actions {
+        bottom: 4px;
+    }
     
 
 }
@@ -772,10 +775,8 @@ body {
 }
 
 @media (max-width: 600px) {
-    .dealer-actions {
-        width: 90%;
-        justify-content: center;
-        bottom: 100px; /* Alineado con el botón de abrir controles */
+         .dealer-actions {
+        bottom: 2px;
     }
     .main-action-btn {
             padding: 10px 20px; 
