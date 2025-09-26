@@ -632,6 +632,9 @@ body {
             left:-35%;
 
 }
+.deck-pile {
+        left:20px;
+}
     
     .sidebar {
         width: 250px;
@@ -697,6 +700,7 @@ body {
         /* Subir el área del dealer */
         padding-top: 10px;
         /* Reducir su padding superior */
+        gap: 40px;
     }
 
     /* Reducir cartas para que quepan mejor */
@@ -708,6 +712,11 @@ body {
     .player-cards-hand {
         height: 105px;
     }
+    .dealer-hand {
+        left: 90px;
+}
+
+    
 
 }
 
