@@ -55,7 +55,7 @@ module.exports = function(db, io) {
 
                 // Obtener la lista actualizada de mesas para enviarla
                 const result = await db.execute({
-                    sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 AND jugadores_actual >= 1 ORDER BY codigo DESC",
+                    sql: "SELECT codigo, dealer, jugadores_actual FROM mesas WHERE estado = 'iniciado' AND jugadores_actual < 4 ORDER BY codigo DESC",
                     args: []
                 });
 

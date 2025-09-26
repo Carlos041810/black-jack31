@@ -744,12 +744,11 @@ text {
     }
 
     .player-actions {
-        position: fixed; /* Mantenemos la posición fija */
-        bottom: 20%;    /* Lo posicionamos en la parte inferior */
-        left: 50%;       /* Centrado horizontalmente */
-        transform: translateX(-50%); /* Ajuste del centrado */
-        width: 90%;      /* Ancho para pantallas pequeñas */
-        background: transparent; /* Aseguramos que no tenga fondo */
+position: absolute;
+bottom: 100px;      /* o 0 para bien pegado */
+left: 50%;
+transform: translateX(-50%);
+
     }
 
     .player-cards {
@@ -773,7 +772,7 @@ text {
         text-align: center;
         order: 1;
         margin-bottom: 0;
-        margin-top: -250px;
+        margin-top: -230px;
         gap: 30px;
         /* Aumentado para dar más espacio entre la baraja y la mano del dealer */
     }
@@ -814,7 +813,7 @@ text {
 
 @media (max-width: 620px) { 
     .dealer-area {
-        margin-top: -300px;
+        margin-top: -280px;
         gap: 20px;
     }
     .dealer-hand {

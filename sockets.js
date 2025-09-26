@@ -754,6 +754,18 @@ module.exports = (io, db) => {
             // Notificar a los jugadores que el dealer cerró la sala y luego desconectarlos
             io.to(roomCode).emit('dealerDisconnected', { message: 'El dealer ha cerrado la sala. Volviendo al menú principal.' });
             
+            // Si existe un temporizador de desconexión para esta sala, lo cancelamos.
+            if (rooms[roomCode].dealerDisconnectTimer) {
+                clearTimeout(rooms[roomCode].dealerDisconnectTimer);
+                console.log(`[EXIT] Temporizador de desconexión para la sala ${roomCode} cancelado por salida intencionada.`);
+            }
+
+            // Limpiar la referencia a la sala en el socket para evitar que 'disconnect' actúe
+            socket.roomCode = undefined;
+
+            // Marcar la sala para que el evento 'disconnect' no actúe sobre ella
+            rooms[roomCode].closedIntentionally = true;
+
             // Eliminar la sala de la memoria
             delete rooms[roomCode];
             console.log(`Sala ${roomCode} eliminada de la memoria.`);
@@ -763,7 +775,8 @@ module.exports = (io, db) => {
             console.log(`👋 Usuario desconectado: ${socket.id}`);
             const roomCode = socket.roomCode;
 
-            if (!roomCode || !rooms[roomCode]) {
+            // Si el socket no tiene un roomCode, o la sala no existe, o fue cerrada intencionadamente, no hacemos nada.
+            if (!roomCode || !rooms[roomCode] || rooms[roomCode].closedIntentionally) {
                 console.log(`El usuario ${socket.id} no estaba en ninguna sala activa.`);
                 return;
             }
