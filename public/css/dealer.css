@@ -329,12 +329,6 @@ body {
     position: relative;
 }
 
-.dealer-score-display {
-            position:relative; bottom:-110px; left:-10%;
-            transform:translateX(-50%); color:#FFD700;
-            font-size:1.3em; font-weight:bold; text-align:center;
-}
-
 .deck-pile {
     position: relative;
     width: 70px;
@@ -712,10 +706,6 @@ body {
     .player-cards-hand {
         height: 105px;
     }
-    .dealer-hand {
-        left: 90px;
-}
-
     
 
 }

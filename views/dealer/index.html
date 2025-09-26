@@ -8,6 +8,16 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/dealer.css">
+    <style>
+        /* Contenedor para la mano y la puntuación del dealer */
+        .dealer-hand-container {
+            position: relative; /* Permite posicionar elementos hijos de forma absoluta */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+    </style>
 
 </head>
 
@@ -116,12 +126,14 @@
                 <div class="card card-back"></div>
             </div>
 
-            <!-- Las cartas que el dealer se reparte a sí mismo -->
-            <div class="dealer-hand" id="dealerCards"></div>
-            <div id="dealerScoreContainer" class="dealer-score-display"">
-                <span id="dealerScore">Puntos: 0</span>
-            </div>
-                <!-- Las cartas del dealer aparecerán aquí cuando se repartan -->
+            <!-- Contenedor para la mano y la puntuación del dealer -->
+            <div class="dealer-hand-container">
+                <div class="dealer-hand" id="dealerCards">
+                    <!-- Las cartas del dealer aparecerán aquí -->
+                </div>
+                <div id="dealerScoreContainer" class="dealer-score-display" style="display:none;">
+                    <span id="dealerScore">Puntos: 0</span>
+                </div>
             </div>
         </div>
 
