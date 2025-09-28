@@ -7,6 +7,9 @@
     <title>Blackjack Online -Player</title>
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Font para un estilo más moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/players.css">
 </head>
@@ -110,18 +113,28 @@
         <button id="standBtn" class="action-btn stand">Plantarse</button>
     </div>
 
+    <!-- Botón para reabrir el modal de resultados -->
+    <div id="viewResultsContainer"
+        style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;">
+        <button id="viewResultsBtn" class="action-btn" style="background: #8e44ad;">Ver Resultados</button>
+    </div>
+
     <!-- Modal de Fin de Ronda -->
     <div id="endRoundModal" class="end-round-modal" style="display: none;">
         <div class="end-round-modal-content">
             <span class="close-button"
                 onclick="document.getElementById('endRoundModal').style.display='none'">&times;</span>
-            <h2 id="endRoundModalTitle">Ronda Finalizada</h2>
+            <h2 id="endRoundModalTitle" style="padding-bottom: 10px ;">Resultados</h2>
             <div id="endRoundModalBody">
                 <p>Esperando que el dealer inicie la siguiente ronda.</p>
             </div>
+            <button class="action-btn stand" style="margin-top: 20px; background: #7f8c8d;"
+                onclick="document.getElementById('endRoundModal').style.display='none'">Cerrar</button>
         </div>
     </div>
 
+    <!-- Librería para el efecto de confeti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/header.js"></script>
     <script>
@@ -134,6 +147,7 @@
         let currentPlayerName = '';
         let playersList = []; // Lista de jugadores para referencia
         let roomCode = '';
+        let confettiInterval = null; // Variable para controlar la lluvia de confeti
 
         const balanceEl = document.getElementById('balance');
         const totalBetEl = document.getElementById('totalBet');
@@ -159,6 +173,11 @@
             document.getElementById('standBtn').addEventListener('click', () => {
                 console.log('-> Emitiendo playerStand');
                 window.socket.emit('playerStand');
+            });
+
+            // Botón para ver resultados
+            document.getElementById('viewResultsBtn').addEventListener('click', () => {
+                document.getElementById('endRoundModal').style.display = 'flex';
             });
 
             // === EVENTOS DEL SERVIDOR ===
@@ -187,7 +206,7 @@
                 console.log('🔄 Recibido estado de reconexión:', data);
                 gameState = data.gameState;
                 playersList = data.players;
-                
+
                 // Restaurar estado personal
                 currentBalance = data.balance;
                 currentBet = data.bet;
@@ -245,6 +264,7 @@
                 // Mostrar/ocultar área de apuestas según el estado
                 if (gameState === 'betting') {
                     bettingArea.style.display = 'flex';
+                    document.getElementById('viewResultsContainer').style.display = 'none';
                 } else {
                     bettingArea.style.display = 'none';
                 }
@@ -300,6 +320,7 @@
                 document.getElementById('dealerCards').innerHTML = '';
                 // Limpiar el mensaje de turno. El resto de la UI se limpia con 'updatePlayerList'
                 document.getElementById('playerActions').style.display = 'none';
+                document.getElementById('viewResultsContainer').style.display = 'none';
                 const turnDisplay = document.getElementById('turnDisplay');
                 // Limpiar overlays de resultados
                 document.querySelectorAll('.result-overlay').forEach(o => o.remove());
@@ -315,6 +336,12 @@
                 document.querySelectorAll('.card-win-border, .card-lose-border').forEach(c => {
                     c.classList.remove('card-win-border', 'card-lose-border');
                 });
+                // --- Detener la lluvia de confeti ---
+                if (confettiInterval) {
+                    clearInterval(confettiInterval);
+                    confettiInterval = null;
+                    if (typeof confetti === 'function') confetti.reset();
+                }
                 const dealerScore = document.querySelector('.dealer-score-display');
                 if (dealerScore) dealerScore.remove();
                 if (turnDisplay) turnDisplay.remove();
@@ -504,6 +531,9 @@
                 if (turnDisplay) turnDisplay.style.display = 'none';
                 document.getElementById('playerActions').style.display = 'none';
 
+                // Mostrar el botón para ver resultados
+                document.getElementById('viewResultsContainer').style.display = 'block';
+
                 data.results.forEach(result => {
                     // Lógica para colorear bordes de cartas del jugador y dealer
                     if (result.playerId === window.socket.id) {
@@ -562,52 +592,205 @@
                 // Abrir el modal de fin de ronda después de 3 segundos
                 setTimeout(() => {
                     const modal = document.getElementById('endRoundModal');
+                    const modalTitle = document.getElementById('endRoundModalTitle');
                     const modalBody = document.getElementById('endRoundModalBody');
+                    modalTitle.style.textAlign = 'center'; // Centrar el título
 
-                    // 1. Ordenar los resultados
-                    const sortedResults = [...data.results].sort((a, b) => {
-                        const scoreA = a.playerScore;
-                        const scoreB = b.playerScore;
-                        const aBusted = scoreA > 31;
-                        const bBusted = scoreB > 31;
+                    // --- Lógica para personalizar el título del modal ---
+                    const myResult = data.results.find(r => r.playerId === window.socket.id);
+                    if (myResult) {
+                        // Quitar animaciones previas si las hay
+                        modalTitle.classList.remove('modal-anim-win', 'modal-anim-lose', 'modal-anim-push');
+                        switch (myResult.outcome) {
+                            case  'WIN':
+                            case 'BLACKJACK':
+                                modalTitle.textContent = '¡Ganaste!';
+                                modalTitle.style.color = '#27ae60';
+                                modalTitle.classList.add('modal-anim-win');
+                                if (confettiInterval) clearInterval(confettiInterval);
+                                if (typeof confetti === 'function') {
+                                    confettiInterval = setInterval(() => {
+                                        confetti({
+                                            particleCount: 6,
+                                            startVelocity: 8,
+                                            spread: 70,
+                                            ticks: 600,
+                                            origin: { x: Math.random(), y: 0 },
+                                            gravity: 0.8,
+                                            scalar: 1,
+                                            colors: ['#27ae60', '#2ecc71', '#D4AF37', '#F4E678'],
+                                            zIndex: 1600
+                                        });
+                                    }, 200);
+                                }
+                                break;
+                            case 'LOSE':
+                                modalTitle.textContent = 'Perdiste';
+                                modalTitle.style.color = '#c0392b';
+                                modalTitle.classList.add('modal-anim-lose');
+                                if (confettiInterval) clearInterval(confettiInterval);
+                                if (typeof confetti === 'function') {
+                                    confettiInterval = setInterval(() => {
+                                        confetti({
+                                            particleCount: 6,
+                                            startVelocity: 8,
+                                            spread: 70,
+                                            ticks: 600,
+                                            origin: { x: Math.random(), y: 0 },
+                                            gravity: 0.8,
+                                            scalar: 1,
+                                            colors: ['#e74c3c', '#c0392b', '#a93226', '#ff6b6b'],
+                                            zIndex: 1600
+                                        });
+                                    }, 200);
+                                }
+                                break;
+                            case 'PUSH':
+                                modalTitle.textContent = '¡Empate!';
+                                modalTitle.style.color = '#2980b9';
+                                modalTitle.classList.add('modal-anim-push');
+                                if (confettiInterval) clearInterval(confettiInterval);
+                                if (typeof confetti === 'function') {
+                                    confettiInterval = setInterval(() => {
+                                        confetti({
+                                            particleCount: 6,
+                                            startVelocity: 8,
+                                            spread: 70,
+                                            ticks: 600,
+                                            origin: { x: Math.random(), y: 0 },
+                                            gravity: 0.8,
+                                            scalar: 1,
+                                            colors: ['#3498db', '#2980b9', '#5dade2', '#85c1e9'],
+                                            zIndex: 1600
+                                        });
+                                    }, 200);
+                                }
+                                break;
+                        }
+                    }
+                    // --- Animaciones CSS para el título del modal ---
+                    if (!document.getElementById('modal-anim-styles')) {
+                        const style = document.createElement('style');
+                        style.id = 'modal-anim-styles';
+                        style.innerHTML = `
+                            .modal-anim-win, .modal-anim-lose, .modal-anim-push {
+                                animation: modal-breath 1.3s cubic-bezier(.4,0,.2,1) infinite;
+                            }
+                            @keyframes modal-breath {
+                                0% { transform: scale(1); }
+                                30% { transform: scale(1.18); }
+                                50% { transform: scale(1.08); }
+                                70% { transform: scale(1.18); }
+                                100% { transform: scale(1); }
+                            }
+                        `;
+                        document.head.appendChild(style);
+                    }
 
-                        if (aBusted && !bBusted) return 1; // 'a' se pasó, va después
-                        if (!aBusted && bBusted) return -1; // 'b' se pasó, va después
-                        if (aBusted && bBusted) return scoreA - scoreB; // Ambos se pasaron, el que menos se pasó va primero
-                        return scoreB - scoreA; // Ninguno se pasó, el más alto va primero
+                    // Función para determinar el resultado general del dealer
+                    function getDealerOutcome(myResult) {
+                        // Si no hay un resultado para el jugador actual (por ejemplo, si es un espectador),
+                        // el dealer se muestra como neutral (PUSH).
+                        if (!myResult) {
+                            return 'PUSH';
+                        }
+                        // El resultado del dealer es el opuesto al del jugador.
+                        switch (myResult.outcome) {
+                            case 'WIN':
+                            case 'BLACKJACK':
+                                return 'LOSE'; // Si yo gano, el dealer pierde.
+                            case 'LOSE':
+                                return 'WIN'; // Si yo pierdo, el dealer gana.
+                            case 'PUSH':
+                                return 'PUSH'; // Si empatamos, es un empate.
+                            default:
+                                return 'PUSH';
+                        }
+                    }
+
+                    // 1. Crear una lista combinada de jugadores y el dealer
+                    const allParticipants = [
+                        ...data.results.map(r => ({ ...r, type: 'player' })),
+                        {
+                            playerName: 'Dealer',
+                            playerScore: data.dealerScore,
+                            type: 'dealer',
+                            outcome: getDealerOutcome(myResult) // Asignar resultado al dealer basado en mi resultado
+                        }
+                    ];
+
+                    // 2. Ordenar la lista: ganadores primero, luego el dealer, luego perdedores/empates.
+                    allParticipants.sort((a, b) => {
+                        const outcomeA = a.outcome; // 'WIN', 'BLACKJACK', 'LOSE', 'PUSH'
+                        const outcomeB = b.outcome;
+
+                        // Prioridad para ganadores
+                        const aWins = outcomeA === 'WIN' || outcomeA === 'BLACKJACK';
+                        const bWins = outcomeB === 'WIN' || outcomeB === 'BLACKJACK';
+
+                        if (aWins && !bWins) return -1;
+                        if (!aWins && bWins) return 1;
+
+                        // Si ambos ganan o ambos no ganan, ordenar por puntuación (el más alto primero)
+                        // Los que se pasan (bust) van al final.
+                        const scoreA = a.playerScore > 31 ? -1 : a.playerScore;
+                        const scoreB = b.playerScore > 31 ? -1 : b.playerScore;
+
+                        return scoreB - scoreA;
                     });
 
-                    // 2. Crear el HTML para la lista de puntuaciones
-                    let resultsHtml = `
-                        <div class="results-list">
-                            <div class="results-header">
-                                <span>Jugador</span>
-                                <span>Puntuación</span>
-                            </div>
-                            <div class="results-row dealer-row">
-                                <span>Dealer</span>
-                                <span>${data.dealerScore > 31 ? `Se pasó (${data.dealerScore})` : data.dealerScore}</span>
-                            </div>
-                    `;
-                    sortedResults.forEach(result => {
+                    // 3. Crear el HTML para la lista de puntuaciones
+
+                    let resultsHtml = `<div class="results-list">`;
+                    allParticipants.forEach(participant => {
+                        let rowClass = participant.type === 'dealer' ? 'results-row dealer-row' : 'results-row';
+                        const outcome = participant.outcome;
+                        if (outcome === 'WIN' || outcome === 'BLACKJACK') {
+                            rowClass += ' winner-row';
+                        } else if (outcome === 'LOSE') {
+                            rowClass += ' loser-row';
+                        } else if (outcome === 'PUSH') {
+                            rowClass += ' push-row';
+                        }
+                        // Resaltar SOLO al jugador actual según su resultado
+                        if (participant.playerId === window.socket.id) {
+                            if (outcome === 'WIN' || outcome === 'BLACKJACK') {
+                                rowClass += ' current-player-win';
+                            } else if (outcome === 'PUSH') {
+                                rowClass += ' current-player-push';
+                            } else if (outcome === 'LOSE') {
+                                rowClass += ' current-player-lose';
+                            }
+                        }
                         resultsHtml += `
-                            <div class="results-row">
-                                <span>${result.playerName}</span>
-                                <span>${result.playerScore > 31
-                                ? `Se pasó (${result.playerScore})`
-                                : result.playerScore
-                            }</span>
+                            <div class="${rowClass}" style="transition: all 0.3s ease;">
+                                <span>${participant.playerName}</span>
+                                <span>${participant.playerScore > 31 ? `Se pasó (${participant.playerScore})` : participant.playerScore}</span>
                             </div>
                         `;
                     });
-                    resultsHtml += '</div><p class="waiting-next-round">Esperando que el dealer inicie la siguiente ronda...</p>';
+                    resultsHtml += '</div>';
+
+                    // --- TEXTO PERSONALIZADO DE GANADOR(ES) ---
+                    const winners = allParticipants.filter(p => (p.outcome === 'WIN' || p.outcome === 'BLACKJACK') && p.type === 'player');
+                    let winnerText = '';
+                    if (winners.length === 1) {
+                        winnerText = `${winners[0].playerName} ha ganado la ronda`;
+                    } else if (winners.length === 2) {
+                        winnerText = `${winners[0].playerName} y ${winners[1].playerName} han ganado la ronda`;
+                    }
+                    if (winnerText) {
+                        resultsHtml += `<p class="waiting-next-round">${winnerText}</p><p class="waiting-next-round">Esperando que el dealer inicie la siguiente ronda...</p>`;
+                    } else {
+                        resultsHtml += '<p class="waiting-next-round">Esperando que el dealer inicie la siguiente ronda...</p>';
+                    }
 
                     // 3. Actualizar el contenido del modal y mostrarlo
                     if (modal && modalBody) {
-                        modalBody.innerHTML = resultsHtml;
+                        modalBody.innerHTML = resultsHtml; // Corregido: modalBody
                         modal.style.display = 'flex';
                     }
-                }, 4000); // Aumentado a 4s para dar tiempo a ver los resultados en mesa
+                }, 2000); // 2s para dar tiempo a ver los resultados en mesa
             });
         });
 
@@ -891,17 +1074,57 @@
                         border-top-right-radius: 8px;
                     }
                     .results-row.dealer-row {
-                        background: rgba(212, 175, 55, 0.1);
-                        color: #FFD700;
+                        color: #FFD700; /* Mantenemos el color del texto dorado */
                         font-weight: bold;
                     }
                     .results-row span:last-child {
                         font-weight: bold;
                     }
                     .waiting-next-round {
+                        text-align: center;
+                        font-style: italic;
                         margin-top: 15px;
                         color: #ccc;
-                        box-shadow: 0 0 15px #D4AF37;
+                    }
+                    .end-round-modal-content {
+                        font-family: 'Poppins', sans-serif;
+                    }
+                    .winner-row {
+                        background: linear-gradient(90deg, rgba(39, 174, 96, 0.3), rgba(39, 174, 96, 0.1));
+                        color: #f5f5f5 !important;
+                        border-left: 4px solid #27ae60;
+                        border-radius: 8px;
+                    }
+                    .loser-row {
+                        background: linear-gradient(90deg, rgba(192, 57, 43, 0.25), rgba(192, 57, 43, 0.05));
+                        color: #a0a0a0 !important;
+                        border-left: 4px solid #c0392b;
+                        border-radius: 8px;
+                        opacity: 0.8;
+                    }
+                    .push-row {
+                        background: linear-gradient(90deg, rgba(41, 128, 185, 0.25), rgba(41, 128, 185, 0.05));
+                        color: #bdc3c7 !important;
+                        border-left: 4px solid #2980b9;
+                        border-radius: 8px;
+                    }
+                    .current-player-win {
+                        border: 2.5px solid #27ae60 !important;
+                        background: linear-gradient(90deg, rgba(39, 174, 96, 0.18), rgba(39, 174, 96, 0.05));
+                        font-weight: bold;
+                        transform: scale(1.05) !important;
+                    }
+                    .current-player-push {
+                        border: 2.5px solid #2980b9 !important;
+                        background: linear-gradient(90deg, rgba(41, 128, 185, 0.18), rgba(41, 128, 185, 0.05));
+                        font-weight: bold;
+                        transform: scale(1.05) !important;
+                    }
+                    .current-player-lose {
+                        border: 2.5px solid #c0392b !important;
+                        background: linear-gradient(90deg, rgba(192, 57, 43, 0.18), rgba(192, 57, 43, 0.05));
+                        font-weight: bold;
+                        transform: scale(1.05) !important;
                     }
 
                     .bet-confirmed-icon {

@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Online -Dealer</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <!-- Google Font para un estilo más moderno -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/header.css">
     <link rel="stylesheet" href="/css/dealer.css">
     <style>
@@ -151,6 +154,11 @@
         </div>
     </div>
 
+    <!-- Botón para reabrir el modal de resultados -->
+    <div id="viewResultsContainer" style="display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 100;">
+        <button id="viewResultsBtn" class="main-action-btn" style="background: #8e44ad;">Ver Resultados</button>
+    </div>
+
     <!-- Modal de Fin de Ronda -->
     <div id="endRoundModal" class="end-round-modal" style="display: none;">
         <div class="end-round-modal-content">
@@ -159,10 +167,13 @@
             <div id="endRoundModalBody">
                 <!-- El contenido se generará dinámicamente -->
             </div>
+            <button class="action-btn stand" style="margin-top: 20px; background: #7f8c8d;" onclick="document.getElementById('endRoundModal').style.display='none'">Cerrar</button>
         </div>
     </div>
 
 
+    <!-- Librería para el efecto de confeti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/header.js"></script>
     <script>
@@ -226,6 +237,11 @@
             document.getElementById('resetGameBtn').addEventListener('click', resetGame);
             document.getElementById('dealerHitBtn').addEventListener('click', () => socket.emit('dealerHit'));
             document.getElementById('dealerStandBtn').addEventListener('click', () => socket.emit('dealerStand'));
+
+            // Botón para ver resultados
+            document.getElementById('viewResultsBtn').addEventListener('click', () => {
+                document.getElementById('endRoundModal').style.display = 'flex';
+            });
 
             // Controles del modal en móvil
             const openControlsBtn = document.getElementById('openControlsBtn');
@@ -422,6 +438,9 @@
                 const turnDisplay = document.getElementById('turnDisplay');
                 if (turnDisplay) turnDisplay.style.display = 'none';
 
+                // Mostrar el botón para ver resultados
+                document.getElementById('viewResultsContainer').style.display = 'block';
+
                 data.results.forEach(result => {
                     const playerDiv = document.querySelector(`.player-position[data-player-id="${result.playerId}"]`);
                     const playerCards = playerDiv ? playerDiv.querySelectorAll('.player-cards-hand .card') : [];
@@ -451,34 +470,87 @@
                 setTimeout(() => {
                     const modal = document.getElementById('endRoundModal');
                     const modalBody = document.getElementById('endRoundModalBody');
+                    
+                    // Función para determinar el resultado general del dealer
+                    function getDealerOutcome(results, dealerScore) {
+                        const dealerBusted = dealerScore > 31;
+                        if (dealerBusted) return 'LOSE';
 
-                    // 1. Ordenar los resultados por puntuación (de mayor a menor)
-                    const sortedResults = [...data.results].sort((a, b) => {
-                        const scoreA = a.playerScore;
-                        const scoreB = b.playerScore;
-                        const aBusted = scoreA > 31;
-                        const bBusted = scoreB > 31;
+                        const playerOutcomes = results.map(r => r.outcome);
+                        if (playerOutcomes.every(o => o === 'LOSE')) return 'WIN';
+                        if (playerOutcomes.every(o => o === 'WIN' || o === 'BLACKJACK' || o === 'PUSH') && playerOutcomes.some(o => o === 'WIN' || o === 'BLACKJACK')) return 'LOSE';
+                        
+                        return 'PUSH'; // Resultado mixto
+                    }
 
-                        if (aBusted && !bBusted) return 1;
-                        if (!aBusted && bBusted) return -1;
-                        if (aBusted && bBusted) return scoreA - scoreB;
+                    const dealerOutcome = getDealerOutcome(data.results, data.dealerScore);
+
+                    // --- Lógica de Confeti para el Dealer ---
+                    if (typeof confetti === 'function') {
+                        const confettiOptions = {
+                            particleCount: 150,
+                            spread: 120,
+                            origin: { y: 0.6 },
+                            zIndex: 1600, // Por encima del modal
+                            ticks: 300    // 3 segundos de duración
+                        };
+
+                        switch (dealerOutcome) {
+                            case 'WIN':
+                                // Confeti de victoria (verde)
+                                confetti({
+                                    ...confettiOptions,
+                                    colors: ['#27ae60', '#2ecc71', '#ffffff']
+                                });
+                                break;
+                            case 'LOSE':
+                                // Confeti de derrota (rojo)
+                                confetti({
+                                    ...confettiOptions,
+                                    particleCount: 100,
+                                    spread: 70,
+                                    colors: ['#e74c3c', '#c0392b']
+                                });
+                                break;
+                            // No hay confeti para el empate (PUSH)
+                        }
+                    }
+
+                    // 1. Crear una lista combinada y ordenada
+                    const allParticipants = [
+                        ...data.results.map(r => ({ ...r, type: 'player' })),
+                        {
+                            playerName: 'Dealer',
+                            playerScore: data.dealerScore,
+                            type: 'dealer',
+                            outcome: dealerOutcome
+                        }
+                    ];
+
+                    allParticipants.sort((a, b) => {
+                        const aWins = a.outcome === 'WIN' || a.outcome === 'BLACKJACK';
+                        const bWins = b.outcome === 'WIN' || b.outcome === 'BLACKJACK';
+                        if (aWins && !bWins) return -1;
+                        if (!aWins && bWins) return 1;
+                        const scoreA = a.playerScore > 31 ? -1 : a.playerScore;
+                        const scoreB = b.playerScore > 31 ? -1 : b.playerScore;
                         return scoreB - scoreA;
                     });
 
-                    // 2. Crear el HTML para la lista de puntuaciones
+                    // 2. Crear el HTML
                     let resultsHtml = `
-                        <div class="results-list">
-                            <div class="results-header"><span>Jugador</span><span>Puntuación</span></div>
-                            <div class="results-row dealer-row">
-                                <span>Dealer</span>
-                                <span>${data.dealerScore > 31 ? `Se pasó (${data.dealerScore})` : data.dealerScore}</span>
-                            </div>
-                        `;
-                    sortedResults.forEach(result => {
+                        <div class="results-list">`;
+                    allParticipants.forEach(participant => {
+                        let rowClass = participant.type === 'dealer' ? 'results-row dealer-row' : 'results-row';
+                        const outcome = participant.outcome;
+                        if (outcome === 'WIN' || outcome === 'BLACKJACK') { rowClass += ' winner-row'; } 
+                        else if (outcome === 'LOSE') { rowClass += ' loser-row'; } 
+                        else if (outcome === 'PUSH') { rowClass += ' push-row'; }
+
                         resultsHtml += `
-                            <div class="results-row">
-                                <span>${result.playerName}</span>
-                                <span>${result.playerScore > 31 ? `Se pasó (${result.playerScore})` : result.playerScore}</span>
+                            <div class="${rowClass}">
+                                <span>${participant.playerName}</span>
+                                <span>${participant.playerScore > 31 ? `Se pasó (${participant.playerScore})` : participant.playerScore}</span>
                             </div>`;
                     });
                     resultsHtml += '</div><p class="waiting-next-round">Puedes reiniciar el juego cuando estés listo.</p>';
@@ -520,6 +592,7 @@
                 document.getElementById('revealCardBtn').style.display = 'none';
                 document.getElementById('revealCardBtn').disabled = false; // Resetear para la siguiente ronda
                 // Remover puntuación del dealer
+                document.getElementById('viewResultsContainer').style.display = 'none';
                 document.getElementById('dealerActions').style.display = 'none';
                 // Ocultar modal de fin de ronda si está abierto
                 const endRoundModal = document.getElementById('endRoundModal');
@@ -727,14 +800,34 @@
             border-top-left-radius: 8px; border-top-right-radius: 8px;
         }
         .results-row.dealer-row {
-            background: rgba(212, 175, 55, 0.1);
             color: #FFD700;
             font-weight: bold;
         }
         .results-row span:last-child { font-weight: bold; }
+        .end-round-modal-content {
+            font-family: 'Poppins', sans-serif;
+        }
+        .winner-row {
+            background: linear-gradient(90deg, rgba(39, 174, 96, 0.3), rgba(39, 174, 96, 0.1));
+            color: #f5f5f5 !important;
+            border-left: 4px solid #27ae60;
+            border-radius: 8px;
+        }
+        .loser-row {
+            background: linear-gradient(90deg, rgba(192, 57, 43, 0.25), rgba(192, 57, 43, 0.05));
+            color: #a0a0a0 !important;
+            border-left: 4px solid #c0392b;
+            border-radius: 8px;
+            opacity: 0.8;
+        }
+        .push-row {
+            background: linear-gradient(90deg, rgba(41, 128, 185, 0.25), rgba(41, 128, 185, 0.05));
+            color: #bdc3c7 !important;
+            border-left: 4px solid #2980b9;
+            border-radius: 8px;
+        }
         .waiting-next-round {
-            margin-top: 15px; color: #ccc; text-align: center;
-            font-style: italic;
+            text-align: center; font-style: italic; margin-top: 15px; color: #ccc;
         }
     `;
             document.head.appendChild(style);
