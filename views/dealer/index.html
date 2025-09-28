@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Online -Dealer</title>
+
+    <!-- Favicon personalizado -->
+    <link rel="icon" type="image/png" href="/img/logo.png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- Google Font para un estilo más moderno -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -194,32 +197,15 @@
             roomCode = params.get('codigo');
 
             console.log('📍 Código de sala detectado:', roomCode);
-
             if (roomCode) {
-                setupRoomCode();
                 joinRoomAsDealer();
             } else {
                 showNotification('No se encontró código de sala', 'error');
                 return;
             }
-
             setupEventListeners();
             setupSocketEvents();
         });
-
-        // Configurar código de sala
-        function setupRoomCode() {
-            const roomCodeText = document.getElementById('roomCodeText');
-            const mobileRoomCodeText = document.getElementById('mobileRoomCodeText');
-            const copyBtn = document.getElementById('copyBtn');
-
-            const codeDisplay = `${roomCode}`;
-            if (roomCodeText) roomCodeText.textContent = codeDisplay;
-            if (mobileRoomCodeText) mobileRoomCodeText.textContent = codeDisplay;
-
-            // Asignar el evento de copia a ambos botones si existen
-            if (copyBtn) copyBtn.onclick = copyRoomCode;
-        }
 
         // Unirse como dealer
         function joinRoomAsDealer() {
@@ -689,7 +675,7 @@
             animation: blink 1.5s infinite;
         }
         .player-position.busted {
-            background: rgba(192, 57, 43, 0.4);
+            background:rgba(0, 0, 0, 0.107);
             border-color: #e74c3c;
             opacity: 0.8;
         }

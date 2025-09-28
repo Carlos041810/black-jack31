@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blackjack Online -Player</title>
 
+    <!-- Favicon personalizado -->
+    <link rel="icon" type="image/png" href="/img/logo.png">
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <!-- Google Font para un estilo más moderno -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -161,7 +164,6 @@
             // Unirse a la sala
             if (roomCode && window.socket) {
                 window.socket.emit('joinRoom', roomCode, currentPlayerName);
-                setupRoomCodeDisplay();
             }
 
             // === EVENT LISTENERS PARA ACCIONES ===
@@ -795,13 +797,6 @@
         });
 
         // === FUNCIONES DE RENDERIZADO ===
-
-        function setupRoomCodeDisplay() {
-            const mobileRoomCodeText = document.getElementById('mobileRoomCodeText');
-            if (mobileRoomCodeText) {
-                mobileRoomCodeText.textContent = `${roomCode}`;
-            }
-        }
 
         function renderPlayers(players, currentPlayerName) {
             const playerCardsContainer = document.getElementById('playerCards');
@@ -1494,29 +1489,6 @@
             setTimeout(() => {
                 notification.remove();
             }, 3000);
-        }
-
-        function copyRoomCode() {
-            if (roomCode) {
-                navigator.clipboard.writeText(roomCode)
-                    .then(() => {
-                        showNotification('¡Código copiado al portapapeles!', 'success');
-                    })
-                    .catch(err => {
-                        console.error('Error al copiar:', err);
-                        const textArea = document.createElement('textarea');
-                        textArea.value = roomCode;
-                        document.body.appendChild(textArea);
-                        textArea.select();
-                        try {
-                            document.execCommand('copy');
-                            showNotification('¡Código copiado al portapapeles!', 'success');
-                        } catch (fallbackErr) {
-                            showNotification('Error al copiar código', 'error');
-                        }
-                        document.body.removeChild(textArea);
-                    });
-            }
         }
 
         async function exitRoom() {

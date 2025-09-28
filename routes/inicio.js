@@ -22,8 +22,8 @@ module.exports = function(db, io) {
 
     // Asegurar que ambas mesas existan al iniciar
     (async () => {
-        await asegurarMesa('2025', 'Dealer Mesa 1');
-        await asegurarMesa('2024', 'Dealer Mesa 2');
+        await asegurarMesa('2025', 'Mesa 1');
+        await asegurarMesa('2024', 'Mesa 2');
     })();
 
 

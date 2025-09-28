@@ -76,14 +76,8 @@ async function main() {
 
   // Ruta para la vista del Dealer
   app.get("/dealer", (req, res) => {
-    // HTML específico que solo la vista del dealer tiene en el header de escritorio
-    const dealerSpecificHtml = `
-        <div class="invite-section">
-            <span id="roomCodeText"></span>
-            <button id="copyBtn">COPY</button>
-        </div>
-    `;
-    renderView(res, "views/dealer/index.html", dealerSpecificHtml);
+    // La vista del dealer ya no tiene elementos extra en el header.
+    renderView(res, "views/dealer/index.html", "");
   });
 
   // Ruta para la vista del Jugador

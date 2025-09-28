@@ -789,3 +789,40 @@ body {
         bottom: 12%; /* Ajuste para móvil pequeño */
     }
 }
+
+/* --- Media Queries para el Header (Específico de Dealer) --- */
+
+@media (max-width: 768px) {
+    .desktop-only {
+        display: none;
+    }
+
+    .menu-toggle {
+        display: block;
+    }
+
+    .mobile-menu {
+        position: absolute;
+        top: 90%;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.95);
+        padding: 20px;
+        border-radius: 10px;
+        min-width: 200px;
+        display: none;
+        flex-direction: column;
+        gap: 15px;
+        z-index: 1100;
+    }
+
+    .mobile-menu.active {
+        display: flex;
+    }
+}
+
+@media (max-width: 600px) {
+    .exit-btn {
+        padding: 8px 12px;
+        font-size: 0.8em;
+    }
+}
