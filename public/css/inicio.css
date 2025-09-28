@@ -405,3 +405,27 @@ body {
         width: 100%;
     }
 }
+
+/* Mejoras para pantallas superangostas */
+@media (max-width: 480px) {
+    .login-container {
+        min-width: 340px;
+        width: 98vw;
+        padding: 20px 5px;
+    }
+    .option-card {
+        min-width: 320px;
+        padding: 25px 5px;
+    }
+    #available-tables-container {
+        overflow-x: auto;
+        min-width: 320px;
+        padding: 5px 0;
+    }
+    .tables-header, .table-row {
+        min-width: 320px;
+        font-size: 0.95em;
+        padding: 10px 8px;
+        gap: 8px;
+    }
+}
